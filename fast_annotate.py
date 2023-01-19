@@ -8,29 +8,75 @@ import argparse
 '''
 TODO
 Make it so you can start where you left off
+Make it so the hotkeys can't be setkeys
+Make it so two hotkeys can't be the same 
 '''
 
-def add_or_remove_attribute(key, annotation, attribute_index_map, attributes, hotkeys):
+# Once the csv is written to, it is very hard to overwrite
+# unless you read in the entire csv file and create a new temporary one every time.
+# This seems wildly inefficient.
+# Instead since it seems  very difficult to allow users to start where they left off, we can make it so the program
+# only writes when all videos for a sign are finished. In the future, once I figure out how to allow users to start
+# where they left off, using the exit key can write what is currently being saved.
+
+BACK_KEY = "0"
+REPLAY_KEY = "-"
+NEXT_KEY = "="
+
+def process_key(key, annotation, attribute_index_map, sign_annotations, full_annotation, attributes, hotkeys, invalid_files, cap, i, current_video):
     if key in hotkeys:
         if (annotation[attribute_index_map[hotkeys[key]]] == ""):
             annotation[attribute_index_map[hotkeys[key]]] = 'x'
             attributes.add(hotkeys[key])
-            print("--------------\n"
-                  "ADDING " + hotkeys[key] +
-                  "\n--------------")
+            print("ADDING " + hotkeys[key])
+
         else:
             annotation[attribute_index_map[hotkeys[key]]] = ""
             attributes.remove(hotkeys[key])
-            print("--------------\n"
-                  "REMOVING " + hotkeys[key] +
-                  "\n--------------")
-
+            print("REMOVING " + hotkeys[key])
+    elif key == NEXT_KEY:
+        full_annotation.extend(annotation)
+        # Check if we are on a new line. If not we are setting in the array
+        print(i)
+        print(len(invalid_files))
+        print(len(sign_annotations))
+        if (i - len(invalid_files) == len(sign_annotations)):
+            sign_annotations.append(full_annotation)
+            print("Appending " + current_video + " With Attributes " + str(attributes))
+        elif ((annotation) != [""] * len(hotkeys)):
+            print("Changing " + current_video + " To " + str(attributes))
+            sign_annotations[i - len(invalid_files)] = full_annotation
+        i = i + 1
+    elif key == REPLAY_KEY:
+        cap.release()
+    elif key == BACK_KEY:
+        full_annotation.extend(annotation)
+        if (i - len(invalid_files) == len(sign_annotations)):
+            sign_annotations.append(full_annotation)
+            print("Appending " + current_video + " With Attributes " + str(attributes))
+        elif ((annotation) != [""] * len(hotkeys)):
+            print("Changing " + current_video + " To " + str(attributes))
+            sign_annotations[i - len(invalid_files)] = full_annotation
+        if (i >= 1 + len(invalid_files)):
+            i = i - 1
+        else:
+            print("AT FIRST FILE")
+        cap.release()
+    elif (key == '`'):
+        print(
+            "QUITTING" +
+            "\n--------------")
+        '''
+        Make it so quitting writes what is currently in sign_annotations.
+        '''
+        exit()
+    return i
 def fast_annotate(directory, signs, hotkeys, output):
     # Tracks what row is currently  being annotated
     attribute_index_map = {}
     for i, value in enumerate(hotkeys.values()):
         attribute_index_map[value] = i
-    with open(output, 'a') as annotations_csv:
+    with open(output, 'w') as annotations_csv:
         csv_writer = csv.writer(annotations_csv)
         for sign_number, sign in enumerate(signs):
             print("%%%%%%%%%%%%%%\n"
@@ -44,20 +90,41 @@ def fast_annotate(directory, signs, hotkeys, output):
             sign_directory_path = os.path.join(directory, sign)
             videos = os.listdir(sign_directory_path)
             videos.sort()
+            # 2d array that stores a sign's annotation so that it can all be written at once.
+            sign_annotations = []
+            # Track the invalid files so that if we traverse i backwards, it skips over them
+            invalid_files = set()
+            #This is a really bandaid solution. Needs to be fixed in the future
+            bad_videos_annotations = []
+            bad_videos_indexes = set()
             i = 0
             # Traverses through each video in the directory
-            while(i < len(videos)):
+            while(i <= len(videos)):
+                if (i == len(videos)):
+                    print(
+                        "You have just finished the last sign. Press any key to go to the next sign or " + BACK_KEY + " to return")
+                    key = chr(cv2.waitKey(0) & 0xFF)
+                    if (key == BACK_KEY):
+                        i = i - 1
+                    else:
+                        i = i + 1
+                        continue
                 # First element in annotation row is the video name
                 full_annotation = [sign, videos[i]]
                 # stores the full path of the current video
                 current_video = os.path.join(sign_directory_path, videos[i])
+                if (i in invalid_files):
+                    print("SKIPPING " + current_video + " INVALID FILE")
+                    invalid_files.remove(i)
+                    i = i - 1
+                    continue
                 print("--------------\n"
-                    + "VIDEO: " + videos[i] +
-                      "\n--------------")
+                    + "VIDEO: " + videos[i])
                 if (current_video[-3:] != "mp4"):
-                    print("--------------\n"
+                    print(
                           "SKIPPING" + current_video + " INVALID FILE TYPE" +
                           "\n--------------")
+                    invalid_files.add(i)
                     i = i + 1
                     continue
                 cap = cv2.VideoCapture(current_video)
@@ -66,13 +133,18 @@ def fast_annotate(directory, signs, hotkeys, output):
                 # Set that stores the current attributes for the video
                 attributes = set()
                 if not cap.isOpened():
-                    print("--------------\n"
+                    print(
                           "VIDEO DID NOT OPEN. WRITING Video Doesn't Play" +
                           "\n--------------")
+
                     annotation[attribute_index_map["Video Doesn't Play"]] = 'x'
                     full_annotation.extend(annotation)
-                    csv_writer.writerow(full_annotation)
+                    if i not in bad_videos_indexes:
+                        bad_videos_annotations.append(full_annotation)
+                        bad_videos_indexes.add(i)
+                    invalid_files.add(i)
                     i = i + 1
+                    continue
                 else:
                     while(cap.isOpened()):
                         ret, frame = cap.read()
@@ -80,25 +152,23 @@ def fast_annotate(directory, signs, hotkeys, output):
                             # Display Resulting frame
                             cv2.imshow('Frame', frame)
                             key = chr(cv2.waitKey(1) & 0xFF)
-                            add_or_remove_attribute(key, annotation, attribute_index_map, attributes, hotkeys)
+                            i = process_key(key, annotation, attribute_index_map, sign_annotations, full_annotation, attributes, hotkeys, invalid_files, cap, i, current_video)
+                            if(key == BACK_KEY or key == NEXT_KEY or key == REPLAY_KEY):
+                                cap.release()
                         else:
                             key = None
-                            while  key != '-' and key != '=':
+                            while key != BACK_KEY and key != NEXT_KEY and key != REPLAY_KEY:
                                 print("Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
-                                print("Press Corresponding Attribute Keys to Add/Remove, (-) to Replay, or (=) to Proceed to Next Video")
+                                print("Press Attribute Keys to Add/Remove,(" + BACK_KEY + ") to go back (" + REPLAY_KEY + ") to Replay, or (" + NEXT_KEY + ") to Proceed to Next Video")
                                 key = chr(cv2.waitKey(0) & 0xFF)
-                                if(key == '=') :
-                                    full_annotation.extend(annotation)
-                                    csv_writer.writerow(full_annotation)
-                                    i = i + 1
-                                if(key == '`'):
-                                    print("--------------\n"
-                                          "QUITTING" +
-                                          "\n--------------")
-                                    exit()
-                                else:
-                                    add_or_remove_attribute(key, annotation, attribute_index_map, attributes, hotkeys)
+                                i = process_key(key, annotation, attribute_index_map, sign_annotations, full_annotation,
+                                                attributes, hotkeys, invalid_files, cap, i, current_video)
                             break
+
+            print("Finished sign {" + sign + "} writing annotations" + "\n--------------")
+            sign_annotations.extend(bad_videos_annotations)
+            sign_annotations.sort()
+            csv_writer.writerows(sign_annotations)
         print("--------------\n\n"
               + str(signs) + "Have been annotated and written"
               "\n\n--------------")
@@ -120,6 +190,9 @@ if __name__ == '__main__':
     file = open("hotkeys.json")
     hotkeys = json.load(file)
     file.close()
+    for key in hotkeys.keys():
+        if(key == BACK_KEY or key == NEXT_KEY or key == REPLAY_KEY):
+            raise ValueError("Hotkeys cannot be the same as navigation keys")
     fast_annotate(arguments.directory, arguments.signs, hotkeys, arguments.output)
 
 

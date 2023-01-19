@@ -1,0 +1,7 @@
+sign,filename,good,start too early,start too late,end too early,end too late,wrong sign,empty sign,cropped,Slow Motion,Video Doesn't Play
+cut,01-2022_12_21_12_11_42.086-0.mp4,x,,,,,,,,,
+cut,02-2022_12_22_10_33_02.377-0.mp4,,x,x,x,,,,,,
+cut,03-2022_12_22_15_14_46.057-0.mp4,,,,x,x,,,,,
+cut,04-2022_12_22_15_21_28.912-0.mp4,x,x,x,x,x,,,,,
+cut,05-2022_12_26_10_17_05.472-0.mp4,x,,,,,,,,,
+cut,10-2022_12_29_16_27_49.570-0.mp4,,,,,,,,,,x
