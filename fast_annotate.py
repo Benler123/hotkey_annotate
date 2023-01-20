@@ -22,6 +22,8 @@ Make it so two hotkeys can't be the same
 BACK_KEY = "0"
 REPLAY_KEY = "-"
 NEXT_KEY = "="
+DISPLAY_INFO = "9"
+hotkey_info = "Hotkey Info \n"
 
 def process_key(key, annotation, attribute_index_map, sign_annotations, full_annotation, attributes, hotkeys, invalid_files, cap, i, current_video):
     if key in hotkeys:
@@ -37,9 +39,7 @@ def process_key(key, annotation, attribute_index_map, sign_annotations, full_ann
     elif key == NEXT_KEY:
         full_annotation.extend(annotation)
         # Check if we are on a new line. If not we are setting in the array
-        print(i)
-        print(len(invalid_files))
-        print(len(sign_annotations))
+
         if (i - len(invalid_files) == len(sign_annotations)):
             sign_annotations.append(full_annotation)
             print("Appending " + current_video + " With Attributes " + str(attributes))
@@ -62,6 +62,8 @@ def process_key(key, annotation, attribute_index_map, sign_annotations, full_ann
         else:
             print("AT FIRST FILE")
         cap.release()
+    elif (key == '9'):
+        print(hotkey_info)
     elif (key == '`'):
         print(
             "QUITTING" +
@@ -73,9 +75,12 @@ def process_key(key, annotation, attribute_index_map, sign_annotations, full_ann
     return i
 def fast_annotate(directory, signs, hotkeys, output):
     # Tracks what row is currently  being annotated
+    global hotkey_info
     attribute_index_map = {}
-    for i, value in enumerate(hotkeys.values()):
-        attribute_index_map[value] = i
+    for i, key in enumerate(hotkeys.keys()):
+        attribute_index_map[hotkeys[key]] = i
+        hotkey_info = hotkey_info + " {} : {} \n".format(key, hotkeys[key])
+
     with open(output, 'w') as annotations_csv:
         csv_writer = csv.writer(annotations_csv)
         for sign_number, sign in enumerate(signs):
@@ -191,7 +196,7 @@ if __name__ == '__main__':
     hotkeys = json.load(file)
     file.close()
     for key in hotkeys.keys():
-        if(key == BACK_KEY or key == NEXT_KEY or key == REPLAY_KEY):
+        if(key == BACK_KEY or key == NEXT_KEY or key == REPLAY_KEY or key == DISPLAY_INFO):
             raise ValueError("Hotkeys cannot be the same as navigation keys")
     fast_annotate(arguments.directory, arguments.signs, hotkeys, arguments.output)
 
