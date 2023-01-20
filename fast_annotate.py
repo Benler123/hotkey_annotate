@@ -81,7 +81,7 @@ def fast_annotate(directory, signs, hotkeys, output):
         attribute_index_map[hotkeys[key]] = i
         hotkey_info = hotkey_info + " {} : {} \n".format(key, hotkeys[key])
 
-    with open(output, 'w') as annotations_csv:
+    with open(output, 'a') as annotations_csv:
         csv_writer = csv.writer(annotations_csv)
         for sign_number, sign in enumerate(signs):
             print("%%%%%%%%%%%%%%\n"
