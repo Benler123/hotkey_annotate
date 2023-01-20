@@ -163,11 +163,34 @@ def fast_annotate(directory, signs, hotkeys, output):
                                     print(
                                         "Press Attribute Keys to Add/Remove,(" + BACK_KEY + ") to go back (" + REPLAY_KEY + ") to Replay, or (" + NEXT_KEY + ") to Proceed to Next Video")
                                     key = chr(cv2.waitKey(0) & 0xFF)
-                                    i = process_key(key, annotation, attribute_index_map, sign_annotations, full_annotation,
+                                    i = process_key(key, annotation, attribute_index_map, sign_annotations,
+                                                    full_annotation,
                                                     attributes, hotkeys, invalid_files, cap, i, current_video)
                                 break
-                        elif framerate < 30:
-                            time.sleep(0.0167)
+                            ret, frame = cap.read()
+                            if not ret:
+                                key = None
+                                while key != BACK_KEY and key != NEXT_KEY and key != REPLAY_KEY:
+                                    print("Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
+                                    print(
+                                        "Press Attribute Keys to Add/Remove,(" + BACK_KEY + ") to go back (" + REPLAY_KEY + ") to Replay, or (" + NEXT_KEY + ") to Proceed to Next Video")
+                                    key = chr(cv2.waitKey(0) & 0xFF)
+                                    i = process_key(key, annotation, attribute_index_map, sign_annotations,
+                                                    full_annotation,
+                                                    attributes, hotkeys, invalid_files, cap, i, current_video)
+                                break
+                            ret, frame = cap.read()
+                            if not ret:
+                                key = None
+                                while key != BACK_KEY and key != NEXT_KEY and key != REPLAY_KEY:
+                                    print("Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
+                                    print(
+                                        "Press Attribute Keys to Add/Remove,(" + BACK_KEY + ") to go back (" + REPLAY_KEY + ") to Replay, or (" + NEXT_KEY + ") to Proceed to Next Video")
+                                    key = chr(cv2.waitKey(0) & 0xFF)
+                                    i = process_key(key, annotation, attribute_index_map, sign_annotations,
+                                                    full_annotation,
+                                                    attributes, hotkeys, invalid_files, cap, i, current_video)
+                                break
                         ret, frame = cap.read()
                         if ret == True:
                             # Display Resulting frame
