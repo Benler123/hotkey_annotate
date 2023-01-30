@@ -4,7 +4,9 @@ import csv
 import json
 import argparse
 import time
-
+import sys
+import vlc
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 '''
 TODO
@@ -25,199 +27,224 @@ REPLAY_KEY = "-"
 NEXT_KEY = "="
 DISPLAY_INFO = "9"
 hotkey_info = "Hotkey Info \n"
-
-def process_key(key, annotation, attribute_index_map, sign_annotations, full_annotation, attributes, hotkeys, invalid_files, cap, i, current_video):
-    if key in hotkeys:
-        if (annotation[attribute_index_map[hotkeys[key]]] == ""):
-            annotation[attribute_index_map[hotkeys[key]]] = 'x'
-            attributes.add(hotkeys[key])
-            print("ADDING " + hotkeys[key])
-
-        else:
-            annotation[attribute_index_map[hotkeys[key]]] = ""
-            attributes.remove(hotkeys[key])
-            print("REMOVING " + hotkeys[key])
-    elif key == NEXT_KEY:
-        full_annotation.extend(annotation)
-        # Check if we are on a new line. If not we are setting in the array
-
-        if (i - len(invalid_files) == len(sign_annotations)):
-            sign_annotations.append(full_annotation)
-            print("Appending " + current_video + " With Attributes " + str(attributes))
-        elif ((annotation) != [""] * len(hotkeys)):
-            print("Changing " + current_video + " To " + str(attributes))
-            sign_annotations[i - len(invalid_files)] = full_annotation
-        i = i + 1
-    elif key == REPLAY_KEY:
-        cap.release()
-    elif key == BACK_KEY:
-        full_annotation.extend(annotation)
-        if (i - len(invalid_files) == len(sign_annotations)):
-            sign_annotations.append(full_annotation)
-            print("Appending " + current_video + " With Attributes " + str(attributes))
-        elif ((annotation) != [""] * len(hotkeys)):
-            print("Changing " + current_video + " To " + str(attributes))
-            sign_annotations[i - len(invalid_files)] = full_annotation
-        if (i >= 1 + len(invalid_files)):
-            i = i - 1
-        else:
-            print("AT FIRST FILE")
-        cap.release()
-    elif (key == '9'):
-        print(hotkey_info)
-    elif (key == '`'):
-        print(
-            "QUITTING" +
-            "\n--------------")
-        '''
-        Make it so quitting writes what is currently in sign_annotations.
-        '''
-        exit()
-    return i
-def fast_annotate(directory, signs, hotkeys, output):
-    # Tracks what row is currently  being annotated
-    global hotkey_info
-    attribute_index_map = {}
-    for i, key in enumerate(hotkeys.keys()):
-        attribute_index_map[hotkeys[key]] = i
-        hotkey_info = hotkey_info + " {} : {} \n".format(key, hotkeys[key])
-
-    with open(output, 'a') as annotations_csv:
-        csv_writer = csv.writer(annotations_csv)
-        for sign_number, sign in enumerate(signs):
-            print("%%%%%%%%%%%%%%\n"
-                  "ANNOTATING " + str(sign) +
-                  "\n%%%%%%%%%%%%%%")
-            # sign and filename are the first 2 in any of the headers
-            annotation = ["sign", "filename"]
-            annotation.extend(hotkeys.values())
-            # Writes a header before each sign
-            csv_writer.writerow(annotation)
-            sign_directory_path = os.path.join(directory, sign)
-            videos = os.listdir(sign_directory_path)
-            videos.sort()
-            # 2d array that stores a sign's annotation so that it can all be written at once.
-            sign_annotations = []
-            # Track the invalid files so that if we traverse i backwards, it skips over them
-            invalid_files = set()
-            #This is a really bandaid solution. Needs to be fixed in the future
-            bad_videos_annotations = []
-            bad_videos_indexes = set()
-            i = 0
-            # Traverses through each video in the directory
-            while(i <= len(videos)):
-                if (i == len(videos)):
-                    print(
-                        "You have just finished the last sign. Press any key to go to the next sign or " + BACK_KEY + " to return")
-                    key = chr(cv2.waitKey(0) & 0xFF)
-                    if (key == BACK_KEY):
-                        i = i - 1
-                    else:
-                        i = i + 1
-                        continue
-                # First element in annotation row is the video name
-                full_annotation = [sign, videos[i]]
-                # stores the full path of the current video
-                current_video = os.path.join(sign_directory_path, videos[i])
-                if (i in invalid_files):
-                    print("SKIPPING " + current_video + " INVALID FILE")
-                    invalid_files.remove(i)
-                    i = i - 1
-                    continue
-                print("--------------\n"
-                    + "VIDEO: " + videos[i])
-                if (current_video[-3:] != "mp4"):
-                    print(
-                          "SKIPPING" + current_video + " INVALID FILE TYPE" +
-                          "\n--------------")
-                    invalid_files.add(i)
-                    i = i + 1
-                    continue
-                cap = cv2.VideoCapture(current_video)
-                framerate = cap.get(cv2.CAP_PROP_FPS)
-                # Case when video file cannot be read
-                annotation = [""] * len(hotkeys)
-                # Set that stores the current attributes for the video
-                attributes = set()
-                if not cap.isOpened():
-                    print(
-                          "VIDEO DID NOT OPEN. WRITING Video Doesn't Play" +
-                          "\n--------------")
-
-                    annotation[attribute_index_map["Video Doesn't Play"]] = 'x'
-                    full_annotation.extend(annotation)
-                    if i not in bad_videos_indexes:
-                        bad_videos_annotations.append(full_annotation)
-                        bad_videos_indexes.add(i)
-                    invalid_files.add(i)
-                    i = i + 1
-                    continue
-                else:
-                    while(cap.isOpened()):
-                        if framerate > 60:
-                            ret, frame = cap.read()
-                            if not ret:
-                                key = None
-                                while key != BACK_KEY and key != NEXT_KEY and key != REPLAY_KEY:
-                                    print("Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
-                                    print(
-                                        "Press Attribute Keys to Add/Remove,(" + BACK_KEY + ") to go back (" + REPLAY_KEY + ") to Replay, or (" + NEXT_KEY + ") to Proceed to Next Video")
-                                    key = chr(cv2.waitKey(0) & 0xFF)
-                                    i = process_key(key, annotation, attribute_index_map, sign_annotations,
-                                                    full_annotation,
-                                                    attributes, hotkeys, invalid_files, cap, i, current_video)
-                                break
-                            ret, frame = cap.read()
-                            if not ret:
-                                key = None
-                                while key != BACK_KEY and key != NEXT_KEY and key != REPLAY_KEY:
-                                    print("Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
-                                    print(
-                                        "Press Attribute Keys to Add/Remove,(" + BACK_KEY + ") to go back (" + REPLAY_KEY + ") to Replay, or (" + NEXT_KEY + ") to Proceed to Next Video")
-                                    key = chr(cv2.waitKey(0) & 0xFF)
-                                    i = process_key(key, annotation, attribute_index_map, sign_annotations,
-                                                    full_annotation,
-                                                    attributes, hotkeys, invalid_files, cap, i, current_video)
-                                break
-                            ret, frame = cap.read()
-                            if not ret:
-                                key = None
-                                while key != BACK_KEY and key != NEXT_KEY and key != REPLAY_KEY:
-                                    print("Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
-                                    print(
-                                        "Press Attribute Keys to Add/Remove,(" + BACK_KEY + ") to go back (" + REPLAY_KEY + ") to Replay, or (" + NEXT_KEY + ") to Proceed to Next Video")
-                                    key = chr(cv2.waitKey(0) & 0xFF)
-                                    i = process_key(key, annotation, attribute_index_map, sign_annotations,
-                                                    full_annotation,
-                                                    attributes, hotkeys, invalid_files, cap, i, current_video)
-                                break
-                        ret, frame = cap.read()
-                        if ret == True:
-                            # Display Resulting frame
-                            cv2.imshow('Frame', frame)
-                            key = chr(cv2.waitKey(1) & 0xFF)
-                            i = process_key(key, annotation, attribute_index_map, sign_annotations, full_annotation, attributes, hotkeys, invalid_files, cap, i, current_video)
-                            if(key == BACK_KEY or key == NEXT_KEY or key == REPLAY_KEY):
-                                cap.release()
-                        else:
-                            key = None
-                            while key != BACK_KEY and key != NEXT_KEY and key != REPLAY_KEY:
-                                print("Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
-                                print("Press Attribute Keys to Add/Remove,(" + BACK_KEY + ") to go back (" + REPLAY_KEY + ") to Replay, or (" + NEXT_KEY + ") to Proceed to Next Video")
-                                key = chr(cv2.waitKey(0) & 0xFF)
-                                i = process_key(key, annotation, attribute_index_map, sign_annotations, full_annotation,
-                                                attributes, hotkeys, invalid_files, cap, i, current_video)
-                            break
-
-            print("Finished sign {" + sign + "} writing annotations" + "\n--------------")
-            sign_annotations.extend(bad_videos_annotations)
-            sign_annotations.sort()
-            csv_writer.writerows(sign_annotations)
-        print("--------------\n\n"
-              + str(signs) + "Have been annotated and written"
-              "\n\n--------------")
+video_done = False
+sign_annotations = []
+full_annotation = []
+attributes = set()
+hotkeys = {}
+invalid_files = []
+i = 0
+current_video = ""
+app = None
 
 
+annotation = ["sign", "filename"]
+attribute_index_map = {}
+    
+class Player(QtWidgets.QMainWindow):
+    def __init__(self, parent=None, annotations=None, directory=None, signs=None, hkeys=None, output=None):
+        global hotkey_info
+        global video_done
+        global annotation
+        global attribute_index_map
+        global sign_annotations
+        global full_annotation
+        global attributes
+        global hotkeys
+        global invalid_files
+        global recording_annotation
+        global i
+        global current_video
+
+        self.directory = directory
+        self.signs = signs
+        hotkeys = hkeys
+        self.output = output
+
+        attribute_index_map = {}
+        for i, key in enumerate(hotkeys.keys()):
+            attribute_index_map[hotkeys[key]] = i
+            hotkey_info = hotkey_info + " {} : {} \n".format(key, hotkeys[key])
+        
+        super(Player, self).__init__(parent)
+        self.setWindowTitle("Media Player")
+        # creating a basic vlc instance
+        self.instance = vlc.Instance()
+        self.mediaplayer = self.instance.media_player_new()
+        # video frame
+        self.videoframe = QtWidgets.QFrame(
+            frameShape=QtWidgets.QFrame.Box, frameShadow=QtWidgets.QFrame.Raised
+        )
+
+        if sys.platform.startswith("linux"):  # for Linux using the X Server
+            self.mediaplayer.set_xwindow(self.videoframe.winId())
+        elif sys.platform == "win32":  # for Windows
+            self.mediaplayer.set_hwnd(self.videoframe.winId())
+        elif sys.platform == "darwin":  # for MacOS
+            self.mediaplayer.set_nsobject(int(self.videoframe.winId()))
+
+        central_widget = QtWidgets.QWidget()
+        self.setCentralWidget(central_widget)
+        lay = QtWidgets.QVBoxLayout(central_widget)
+        lay.addWidget(self.videoframe)
+
+        self.sign_number = 0
+        self.i = 0
+
+        annotations_csv = open(output, 'a')
+        self.csv_writer = csv.writer(annotations_csv)
+        
+        # sign and filename are the first 2 in any of the headers
+        annotation = ["sign", "filename"]
+        annotation.extend(hotkeys.values())
+        # Writes a header before each sign
+        self.csv_writer.writerow(annotation)
+        
+        self.recording_annotation = ["" for i in range(len(hotkeys))]
+        # 2d array that stores a sign's annotation so that it can all be written at once.
+        sign_annotations = []
+        # Track the invalid files so that if we traverse i backwards, it skips over them
+        invalid_files = set()
+        #This is a really bandaid solution. Needs to be fixed in the future
+        self.bad_videos_annotations = []
+        
+        sign_directory_path = os.path.join(self.directory, self.signs[self.sign_number])
+        self.videos = os.listdir(sign_directory_path)
+        self.videos.sort()
+
+        print("%%%%%%%%%%%%%%\n"
+            "ANNOTATING " + str(self.signs[self.sign_number]) +
+            "\n%%%%%%%%%%%%%%")
+
+        self.playFullVideo()
+
+
+    def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
+        self.process_key(a0.text())
+        return super().keyPressEvent(a0)
+
+    def playFullVideo(self):
+        print("Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
+        print("Press Attribute Keys to Add/Remove,(" + BACK_KEY + ") to go back (" + REPLAY_KEY + ") to Replay, or (" + NEXT_KEY + ") to Proceed to Next Video")
+        if self.i == len(self.videos):
+            print(
+                "You have just finished the last sign. Press any key to go to the next sign or " + BACK_KEY + " to return")
+            return
+        self.sign_directory_path = os.path.join(self.directory, self.signs[self.sign_number])
+        self.videos = os.listdir(self.sign_directory_path)
+        self.videos.sort()
+        self.playVideo(os.path.join(self.sign_directory_path, self.videos[self.i]))
+
+    def playVideo(self, filename):
+        print(filename)
+        media = self.instance.media_new(filename)
+        self.mediaplayer.set_media(media)
+        self.mediaplayer.play()
+
+    def process_key(self, key):
+        global hotkey_info
+        global video_done
+        global annotation
+        global attribute_index_map
+        global sign_annotations
+        global full_annotation
+        global attributes
+        global hotkeys
+        global invalid_files
+        global current_video
+        global app
+
+        if key in hotkeys:
+            print(annotation)
+            print(attribute_index_map)
+            print(hotkeys)
+            print(key)
+            print(attributes)
+            if (self.recording_annotation[attribute_index_map[hotkeys[key]]] == ""):
+                self.recording_annotation[attribute_index_map[hotkeys[key]]] = 'x'
+                attributes.add(hotkeys[key])
+                print("ADDING " + hotkeys[key])
+
+            else:
+                self.recording_annotation[attribute_index_map[hotkeys[key]]] = ""
+                attributes.remove(hotkeys[key])
+                print("REMOVING " + hotkeys[key])
+        elif key == NEXT_KEY:
+            if self.i == len(self.videos):
+                sign = self.signs[self.sign_number]
+                print("Finished sign {" + sign + "} writing annotations" + "\n--------------")
+                sign_annotations.extend(self.bad_videos_annotations)
+                sign_annotations.sort()
+                print("Writing rows ", str(sign_annotations))
+                self.csv_writer.writerows(sign_annotations)
+                self.sign_number += 1
+                self.i = 0
+                if self.sign_number == len(self.signs):
+                    # all done
+                    print("all done")
+                    # self.exit()
+                    app.quit()
+                    return
+                print("%%%%%%%%%%%%%%\n"
+                    "ANNOTATING " + str(self.signs[self.sign_number]) +
+                    "\n%%%%%%%%%%%%%%")
+                # sign and filename are the first 2 in any of the headers
+                annotation = ["sign", "filename"]
+                annotation.extend(hotkeys.values())
+                # Writes a header before each sign
+                self.csv_writer.writerow(annotation)
+                # 2d array that stores a sign's annotation so that it can all be written at once.
+                sign_annotations = []
+                # Track the invalid files so that if we traverse i backwards, it skips over them
+                # invalid_files = set()
+                #This is a really bandaid solution. Needs to be fixed in the future
+                self.bad_videos_annotations = []
+            full_annotation = [self.signs[self.sign_number], self.videos[self.i]]
+            full_annotation.extend(self.recording_annotation)
+            # Check if we are on a new line. If not we are setting in the array
+
+            # if (i - len(invalid_files) == len(sign_annotations)):
+            if (self.i - len(invalid_files) == len(sign_annotations)):
+                sign_annotations.append(full_annotation)
+                print("Appending " + current_video + " With Attributes " + str(attributes))
+            elif ((annotation) != [""] * len(hotkeys)):
+                print("Changing " + current_video + " To " + str(attributes))
+                sign_annotations[self.i - len(invalid_files)] = full_annotation
+            print(sign_annotations)
+            # switch to next video
+            self.i += 1
+            self.recording_annotation = ["" for i in range(len(hotkeys))]
+            self.playFullVideo()
+        elif key == REPLAY_KEY:
+            video_done = True
+            self.playFullVideo()
+        elif key == BACK_KEY:
+            full_annotation = [self.signs[self.sign_number], self.videos[self.i]]
+            full_annotation.extend(annotation)
+            if (self.i - len(invalid_files) == len(sign_annotations)):
+                sign_annotations.append(full_annotation)
+                print("Appending " + current_video + " With Attributes " + str(attributes))
+            elif ((annotation) != [""] * len(hotkeys)):
+                print("Changing " + current_video + " To " + str(attributes))
+                sign_annotations[self.i - len(invalid_files)] = full_annotation
+            if (self.i >= 1 + len(invalid_files)):
+                self.i -= 1
+                self.playFullVideo()
+            else:
+                print("AT FIRST FILE")
+            self.recording_annotation = ["" for i in range(len(hotkeys))]
+            video_done = True
+        elif (key == '9'):
+            print(hotkey_info)
+        elif (key == '`'):
+            print(
+                "QUITTING" +
+                "\n--------------")
+            '''
+            Make it so quitting writes what is currently in sign_annotations.
+            '''
+            exit()
+        return i
 
 
 if __name__ == '__main__':
@@ -237,8 +264,11 @@ if __name__ == '__main__':
     for key in hotkeys.keys():
         if(key == BACK_KEY or key == NEXT_KEY or key == REPLAY_KEY or key == DISPLAY_INFO):
             raise ValueError("Hotkeys cannot be the same as navigation keys")
-    fast_annotate(arguments.directory, arguments.signs, hotkeys, arguments.output)
+    # fast_annotate(arguments.directory, arguments.signs, hotkeys, arguments.output)
 
-
-
+    app = QtWidgets.QApplication(sys.argv)
+    player = Player(directory=arguments.directory, signs=arguments.signs, hkeys=hotkeys, output=arguments.output)
+    player.show()
+    player.resize(640, 480)
+    sys.exit(app.exec_())
 
