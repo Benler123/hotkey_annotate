@@ -88,6 +88,16 @@ class Player(QtWidgets.QMainWindow):
         lay = QtWidgets.QVBoxLayout(central_widget)
         lay.addWidget(self.videoframe)
 
+        self.text_label = QtWidgets.QLabel()
+        self.text_label.setText("Current sign:")
+        self.text_label.setFixedHeight(20)
+        lay.addWidget(self.text_label)
+
+        self.tutorial_info = QtWidgets.QLabel()
+        self.tutorial_info.setText("Press Attribute Keys to Add/Remove,(" + BACK_KEY + ") to go back (" + REPLAY_KEY + ") to Replay, or (" + NEXT_KEY + ") to Proceed to Next Video")
+        self.tutorial_info.setFixedHeight(40)
+        lay.addWidget(self.tutorial_info)
+
         self.sign_number = 0
         self.i = 0
 
@@ -124,7 +134,7 @@ class Player(QtWidgets.QMainWindow):
         return super().keyPressEvent(a0)
 
     def playFullVideo(self):
-        print("Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
+        print("Current Attributes Are " + (str(attributes) if len(attributes) != 0 else "") + ". " + "Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
         print("Press Attribute Keys to Add/Remove,(" + BACK_KEY + ") to go back (" + REPLAY_KEY + ") to Replay, or (" + NEXT_KEY + ") to Proceed to Next Video")
         if self.i == len(self.videos):
             print(
@@ -133,12 +143,14 @@ class Player(QtWidgets.QMainWindow):
         self.sign_directory_path = os.path.join(self.directory, self.signs[self.sign_number])
         self.videos = os.listdir(self.sign_directory_path)
         self.videos.sort()
+        self.text_label.setText(f"Current sign: {self.signs[self.sign_number]}. Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
         self.playVideo(os.path.join(self.sign_directory_path, self.videos[self.i]))
 
     def playVideo(self, filename):
         print(filename)
         media = self.instance.media_new(filename)
         self.mediaplayer.set_media(media)
+        self.mediaplayer.set_rate(4)
         self.mediaplayer.play()
 
     def process_key(self, key):
@@ -169,6 +181,8 @@ class Player(QtWidgets.QMainWindow):
                 self.recording_annotation[attribute_index_map[hotkeys[key]]] = ""
                 attributes.remove(hotkeys[key])
                 print("REMOVING " + hotkeys[key])
+            
+            self.text_label.setText(f"Current sign: {self.signs[self.sign_number]}. Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
         elif key == NEXT_KEY:
             if self.i == len(self.videos):
                 sign = self.signs[self.sign_number]
@@ -183,6 +197,10 @@ class Player(QtWidgets.QMainWindow):
                     # all done
                     print("all done")
                     # self.exit()
+                    done = QtWidgets.QMessageBox()
+                    done.setWindowTitle("Annotations complete")
+                    done.setText("All requested videos have now been annotated. You can view your annotations in annotations.csv.")
+                    x = done.exec_()
                     app.quit()
                     return
                 print("%%%%%%%%%%%%%%\n"
