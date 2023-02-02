@@ -99,8 +99,8 @@ class Player(QtWidgets.QMainWindow):
         lay.addWidget(self.tutorial_info)
         
         self.annotation_info = QtWidgets.QLabel()
-        self.annotation_info.setText("Annotation mapping: " + str(attribute_index_map))
-        self.annotation_info.setFixedHeight(40)
+        self.annotation_info.setText("Annotation mapping: " + str(hotkeys))
+        self.annotation_info.setFixedHeight(20)
         lay.addWidget(self.annotation_info)
 
         self.sign_number = 0
