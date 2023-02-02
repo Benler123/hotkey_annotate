@@ -53,7 +53,6 @@ class Player(QtWidgets.QMainWindow):
         global attributes
         global hotkeys
         global invalid_files
-        global recording_annotation
         global i
         global current_video
 
@@ -98,6 +97,11 @@ class Player(QtWidgets.QMainWindow):
         self.tutorial_info.setText("Press Attribute Keys to Add/Remove,(" + BACK_KEY + ") to go back (" + REPLAY_KEY + ") to Replay, or (" + NEXT_KEY + ") to Proceed to Next Video")
         self.tutorial_info.setFixedHeight(40)
         lay.addWidget(self.tutorial_info)
+        
+        self.annotation_info = QtWidgets.QLabel()
+        self.annotation_info.setText("Annotation mapping: " + str(attribute_index_map))
+        self.annotation_info.setFixedHeight(40)
+        lay.addWidget(self.annotation_info)
 
         self.sign_number = 0
         self.i = 0
