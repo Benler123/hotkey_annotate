@@ -131,6 +131,10 @@ class Player(QtWidgets.QMainWindow):
 
         self.playFullVideo()
 
+    def add_video_to_be_deleted_txt(self):
+        for video in videos_to_be_deleted_set:
+            self.videos_to_be_deleted_txt.write(video + "\n")
+        videos_to_be_deleted_set.clear()
 
     def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
         self.process_key(a0.text())
@@ -187,9 +191,7 @@ class Player(QtWidgets.QMainWindow):
                 sign_annotations.sort()
                 self.csv_writer.writerows(sign_annotations)
                 self.annotations_csv.flush()
-                for video in videos_to_be_deleted_set:
-                    self.videos_to_be_deleted_txt.write(video + "\n")
-                videos_to_be_deleted_set.clear()
+                self.add_video_to_be_deleted_txt()
                 self.sign_number += 1
                 self.i = 0
                 if self.sign_number == len(self.signs):
@@ -205,9 +207,7 @@ class Player(QtWidgets.QMainWindow):
                 # Writes a header before each sign
                 self.csv_writer.writerow(annotation)
                 self.annotations_csv.flush()
-                for video in videos_to_be_deleted_set:
-                    self.videos_to_be_deleted_txt.write(video + "\n")
-                videos_to_be_deleted_set.clear()
+                self.add_video_to_be_deleted_txt()
                 # 2d array that stores a sign's annotation so that it can all be written at once.
                 sign_annotations = []
             full_annotation = [self.signs[self.sign_number], self.videos[self.i]]
@@ -244,6 +244,7 @@ class Player(QtWidgets.QMainWindow):
             app.quit()
             return
         return self.i
+
 
 
 if __name__ == '__main__':
