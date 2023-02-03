@@ -1,4 +1,3 @@
-import cv2
 import os
 import csv
 import json
@@ -32,6 +31,7 @@ sign_annotations = []
 full_annotation = []
 attributes = set()
 hotkeys = {}
+videos_to_be_deleted_set = set()
 # invalid_files is currently unused
 invalid_files = []
 i = 0
@@ -106,6 +106,9 @@ class Player(QtWidgets.QMainWindow):
         self.sign_number = 0
         self.i = 0
 
+
+        self.videos_to_be_deleted_txt = open("Videos_To_Be_Deleted.txt", 'a')
+
         self.annotations_csv = open(output, 'a')
         self.csv_writer = csv.writer(self.annotations_csv)
         
@@ -134,6 +137,7 @@ class Player(QtWidgets.QMainWindow):
         return super().keyPressEvent(a0)
 
     def playFullVideo(self):
+        global current_video
         if self.i == len(self.videos):
             self.text_label.setText("You have just finished the last sign. Press any key to go to the next sign or " + BACK_KEY + " to return")
             return
@@ -141,6 +145,8 @@ class Player(QtWidgets.QMainWindow):
         self.videos = os.listdir(self.sign_directory_path)
         self.videos.sort()
         self.text_label.setText(f"Current sign: {self.signs[self.sign_number]}. Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
+        current_video = self.videos[self.i]
+        print(current_video)
         self.playVideo(os.path.join(self.sign_directory_path, self.videos[self.i]))
 
     def playVideo(self, filename):
@@ -161,16 +167,19 @@ class Player(QtWidgets.QMainWindow):
         global invalid_files
         global current_video
         global app
-
         if key in hotkeys:
+            if (hotkeys[key] == "Video To Be Deleted"):
+                if(current_video in videos_to_be_deleted_set):
+                    videos_to_be_deleted_set.remove(current_video)
+                else:
+                    videos_to_be_deleted_set.add(current_video)
             if (self.recording_annotation[attribute_index_map[hotkeys[key]]] == ""):
                 self.recording_annotation[attribute_index_map[hotkeys[key]]] = 'x'
                 attributes.add(hotkeys[key])
-
             else:
                 self.recording_annotation[attribute_index_map[hotkeys[key]]] = ""
                 attributes.remove(hotkeys[key])
-            
+
             self.text_label.setText(f"Current sign: {self.signs[self.sign_number]}. Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
         elif key == NEXT_KEY:
             if self.i == len(self.videos):
@@ -178,6 +187,9 @@ class Player(QtWidgets.QMainWindow):
                 sign_annotations.sort()
                 self.csv_writer.writerows(sign_annotations)
                 self.annotations_csv.flush()
+                for video in videos_to_be_deleted_set:
+                    self.videos_to_be_deleted_txt.write(video + "\n")
+                videos_to_be_deleted_set.clear()
                 self.sign_number += 1
                 self.i = 0
                 if self.sign_number == len(self.signs):
@@ -193,6 +205,9 @@ class Player(QtWidgets.QMainWindow):
                 # Writes a header before each sign
                 self.csv_writer.writerow(annotation)
                 self.annotations_csv.flush()
+                for video in videos_to_be_deleted_set:
+                    self.videos_to_be_deleted_txt.write(video + "\n")
+                videos_to_be_deleted_set.clear()
                 # 2d array that stores a sign's annotation so that it can all be written at once.
                 sign_annotations = []
             full_annotation = [self.signs[self.sign_number], self.videos[self.i]]
@@ -228,7 +243,7 @@ class Player(QtWidgets.QMainWindow):
             done.exec_()
             app.quit()
             return
-        return i
+        return self.i
 
 
 if __name__ == '__main__':
