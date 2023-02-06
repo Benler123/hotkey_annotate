@@ -143,7 +143,7 @@ class Player(QtWidgets.QMainWindow):
     def playFullVideo(self):
         global current_video
         if self.i == len(self.videos):
-            self.text_label.setText("You have just finished the last sign. Press any key to go to the next sign or " + BACK_KEY + " to return")
+            self.text_label.setText("You have just finished the last sign. Press '=' to go to the next sign or " + BACK_KEY + " to return")
             return
         self.sign_directory_path = os.path.join(self.directory, self.signs[self.sign_number])
         self.videos = os.listdir(self.sign_directory_path)
