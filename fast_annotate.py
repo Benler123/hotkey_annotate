@@ -219,6 +219,8 @@ class Player(QtWidgets.QMainWindow):
             # switch to next video
             self.i += 1
             self.recording_annotation = ["" for i in range(len(hotkeys))]
+            attributes = set()
+            self.text_label.setText(f"Current sign: {self.signs[self.sign_number]}. Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
             self.playFullVideo()
         elif key == REPLAY_KEY:
             video_done = True
@@ -236,6 +238,8 @@ class Player(QtWidgets.QMainWindow):
                 self.playFullVideo()
             self.recording_annotation = ["" for i in range(len(hotkeys))]
             video_done = True
+            attributes = set()
+            self.text_label.setText(f"Current sign: {self.signs[self.sign_number]}. Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
         elif (key == '`'):
             done = QtWidgets.QMessageBox()
             done.setWindowTitle("Annotations complete")
