@@ -205,7 +205,7 @@ class Player(QtWidgets.QMainWindow):
                 self.recording_annotation = ["" for i in range(len(hotkeys))]
                 attributes = set()
             else:
-                self.recording_annotation = full_annotation[self.i][2:]
+                self.recording_annotation = sign_annotations[self.i][2:]
                 annotation = set()
                 for idx, mark in enumerate(self.recording_annotation):
                     if mark == 'x':
