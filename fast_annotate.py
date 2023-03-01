@@ -225,7 +225,7 @@ class Player(QtWidgets.QMainWindow):
                     sign_annotations[self.i] = full_annotation
             if (self.i % 20 >= 1):
                 self.i -= 1
-                self.recording_annotation = full_annotation[self.i][2:]
+                self.recording_annotation = sign_annotations[self.i][2:]
                 annotation = set()
                 for idx, mark in enumerate(self.recording_annotation):
                     if mark == 'x':
