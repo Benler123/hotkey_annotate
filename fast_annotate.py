@@ -107,6 +107,8 @@ class Player(QtWidgets.QMainWindow):
 
         self.annotations_csv = open(output, 'a')
         self.csv_writer = csv.writer(self.annotations_csv)
+
+        self.hotkey_keys = hotkeys.keys()
         
         # sign and filename are the first 2 in any of the headers
         annotation = ["sign", "filename"]
@@ -209,7 +211,7 @@ class Player(QtWidgets.QMainWindow):
                 annotation = set()
                 for idx, mark in enumerate(self.recording_annotation):
                     if mark == 'x':
-                        annotation.add(hotkeys[idx])
+                        annotation.add(hotkeys[self.hotkey_keys[idx]])
             self.text_label.setText(f"Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
             self.playFullVideo()
         elif key == REPLAY_KEY:
