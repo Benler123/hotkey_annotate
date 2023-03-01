@@ -2,7 +2,7 @@ import os
 import csv
 import json
 import argparse
-import time
+import datetime
 import sys
 import vlc
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -31,7 +31,7 @@ sign_annotations = []
 full_annotation = []
 attributes = set()
 hotkeys = {}
-videos_to_be_deleted_set = set()
+reject_re_set = set()
 i = 0
 current_video = ""
 app = None
@@ -102,7 +102,8 @@ class Player(QtWidgets.QMainWindow):
         self.i = 0
 
 
-        self.videos_to_be_deleted_txt = open("Videos_To_Be_Deleted.txt", 'a')
+        self.reject_re = open("REJECT_RE.txt", 'a')
+        self.reject_re.write(f"Session at time {str(datetime.datetime.now())}: \n")
 
         self.annotations_csv = open(output, 'a')
         self.csv_writer = csv.writer(self.annotations_csv)
@@ -127,9 +128,9 @@ class Player(QtWidgets.QMainWindow):
         self.playFullVideo()
 
     def add_video_to_be_deleted_txt(self):
-        for video in videos_to_be_deleted_set:
-            self.videos_to_be_deleted_txt.write(video + "\n")
-        videos_to_be_deleted_set.clear()
+        for video in reject_re_set:
+            self.reject_re.write(video + "\n")
+        reject_re_set.clear()
 
     def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
         self.process_key(a0.text())
@@ -163,11 +164,11 @@ class Player(QtWidgets.QMainWindow):
         global current_video
         global app
         if key in hotkeys:
-            if (hotkeys[key] == "Video To Be Deleted"):
-                if(current_video in videos_to_be_deleted_set):
-                    videos_to_be_deleted_set.remove(current_video)
+            if (hotkeys[key] == "wrong/variant sign"):
+                if(current_video in reject_re_set):
+                    reject_re_set.remove(current_video)
                 else:
-                    videos_to_be_deleted_set.add(current_video)
+                    reject_re_set.add(current_video)
             if (self.recording_annotation[attribute_index_map[hotkeys[key]]] == ""):
                 self.recording_annotation[attribute_index_map[hotkeys[key]]] = 'x'
                 attributes.add(hotkeys[key])
