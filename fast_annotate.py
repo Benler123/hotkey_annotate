@@ -231,7 +231,7 @@ class Player(QtWidgets.QMainWindow):
                 annotation = set()
                 for idx, mark in enumerate(self.recording_annotation):
                     if mark == 'x':
-                        annotation.add(hotkeys[idx])
+                        annotation.add(hotkeys[self.hotkey_keys[idx]])
                 video_done = True
                 attributes = set()
                 self.text_label.setText(f"Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
