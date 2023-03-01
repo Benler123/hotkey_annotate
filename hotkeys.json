@@ -1,13 +1,4 @@
 {
   "z": "good",
-  "x": "start too early",
-  "c": "start too late",
-  "v": "end too early" ,
-  "b": "end too late",
-  "n": "wrong/variant sign",
-  "m": "empty sign",
-  ",": "cropped",
-  "l": "Slow Motion",
-  "k": "Video Doesn't Play",
-  "1": "Video To Be Deleted"
+  "x": "wrong/variant sign"
 }

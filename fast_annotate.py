@@ -201,8 +201,15 @@ class Player(QtWidgets.QMainWindow):
                 self.text_label.setText(f"End of videos. Press {NEXT_KEY} to finish or {BACK_KEY} to return if some signs are unsaved.")
                 return
             # switch to next video
-            self.recording_annotation = ["" for i in range(len(hotkeys))]
-            attributes = set()
+            if (self.i == len(sign_annotations)):
+                self.recording_annotation = ["" for i in range(len(hotkeys))]
+                attributes = set()
+            else:
+                self.recording_annotation = full_annotation[self.i][2:]
+                annotation = set()
+                for idx, mark in enumerate(self.recording_annotation):
+                    if mark == 'x':
+                        annotation.add(hotkeys[idx])
             self.text_label.setText(f"Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
             self.playFullVideo()
         elif key == REPLAY_KEY:
@@ -218,11 +225,16 @@ class Player(QtWidgets.QMainWindow):
                     sign_annotations[self.i] = full_annotation
             if (self.i % 20 >= 1):
                 self.i -= 1
+                self.recording_annotation = full_annotation[self.i][2:]
+                annotation = set()
+                for idx, mark in enumerate(self.recording_annotation):
+                    if mark == 'x':
+                        annotation.add(hotkeys[idx])
+                video_done = True
+                attributes = set()
+                self.text_label.setText(f"Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
+                annotation = full_annotation[self.i][2:]
                 self.playFullVideo()
-            self.recording_annotation = ["" for i in range(len(hotkeys))]
-            video_done = True
-            attributes = set()
-            self.text_label.setText(f"Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
         elif (key == '`'):
             done = QtWidgets.QMessageBox()
             done.setWindowTitle("Annotations complete")
