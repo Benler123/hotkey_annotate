@@ -32,8 +32,6 @@ full_annotation = []
 attributes = set()
 hotkeys = {}
 videos_to_be_deleted_set = set()
-# invalid_files is currently unused
-invalid_files = []
 i = 0
 current_video = ""
 app = None
@@ -43,7 +41,7 @@ annotation = ["sign", "filename"]
 attribute_index_map = {}
     
 class Player(QtWidgets.QMainWindow):
-    def __init__(self, parent=None, annotations=None, directory=None, signs=None, hkeys=None, output=None):
+    def __init__(self, parent=None, annotations=None, directory=None, sign=None, users=None, hkeys=None, output=None):
         global hotkey_info
         global video_done
         global annotation
@@ -52,12 +50,10 @@ class Player(QtWidgets.QMainWindow):
         global full_annotation
         global attributes
         global hotkeys
-        global invalid_files
         global i
         global current_video
 
         self.directory = directory
-        self.signs = signs
         hotkeys = hkeys
         self.output = output
 
@@ -103,7 +99,6 @@ class Player(QtWidgets.QMainWindow):
         self.annotation_info.setFixedHeight(20)
         lay.addWidget(self.annotation_info)
 
-        self.sign_number = 0
         self.i = 0
 
 
@@ -122,11 +117,11 @@ class Player(QtWidgets.QMainWindow):
         self.recording_annotation = ["" for i in range(len(hotkeys))]
         # 2d array that stores a sign's annotation so that it can all be written at once.
         sign_annotations = []
-        # Track the invalid files so that if we traverse i backwards, it skips over them
-        invalid_files = set()
+
+        self.sign = sign
         
-        sign_directory_path = os.path.join(self.directory, self.signs[self.sign_number])
-        self.videos = os.listdir(sign_directory_path)
+        self.sign_directory_path = os.path.join(self.directory, sign)
+        self.videos = os.listdir(self.sign_directory_path)
         self.videos.sort()
 
         self.playFullVideo()
@@ -142,16 +137,13 @@ class Player(QtWidgets.QMainWindow):
 
     def playFullVideo(self):
         global current_video
-        if self.i == len(self.videos):
-            self.text_label.setText("You have just finished the last sign. Press '=' to go to the next sign or " + BACK_KEY + " to return")
+        if self.i % 20 == 19:
+            self.text_label.setText("You are at a save checkpoint. Press '=' to save current annotations or " + BACK_KEY + " to return")
             return
-        self.sign_directory_path = os.path.join(self.directory, self.signs[self.sign_number])
-        self.videos = os.listdir(self.sign_directory_path)
-        self.videos.sort()
-        self.text_label.setText(f"Current sign: {self.signs[self.sign_number]}. Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
+        self.text_label.setText(f"Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
         current_video = self.videos[self.i]
         print(current_video)
-        self.playVideo(os.path.join(self.sign_directory_path, self.videos[self.i]))
+        self.playVideo(os.path.join(self.sign_directory_path, current_video))
 
     def playVideo(self, filename):
         media = self.instance.media_new(filename)
@@ -168,7 +160,6 @@ class Player(QtWidgets.QMainWindow):
         global full_annotation
         global attributes
         global hotkeys
-        global invalid_files
         global current_video
         global app
         if key in hotkeys:
@@ -184,62 +175,52 @@ class Player(QtWidgets.QMainWindow):
                 self.recording_annotation[attribute_index_map[hotkeys[key]]] = ""
                 attributes.remove(hotkeys[key])
 
-            self.text_label.setText(f"Current sign: {self.signs[self.sign_number]}. Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
+            self.text_label.setText(f"Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
         elif key == NEXT_KEY:
             if self.i == len(self.videos):
-                sign = self.signs[self.sign_number]
                 sign_annotations.sort()
                 self.csv_writer.writerows(sign_annotations)
                 self.annotations_csv.flush()
                 self.add_video_to_be_deleted_txt()
-                self.sign_number += 1
                 self.i = 0
-                if self.sign_number == len(self.signs):
-                    done = QtWidgets.QMessageBox()
-                    done.setWindowTitle("Annotations complete")
-                    done.setText("All requested videos have now been annotated. You can view your annotations in annotations.csv.")
-                    done.exec_()
-                    app.quit()
-                    return
-                # sign and filename are the first 2 in any of the headers
-                annotation = ["sign", "filename"]
-                annotation.extend(hotkeys.values())
-                # Writes a header before each sign
-                self.csv_writer.writerow(annotation)
-                self.annotations_csv.flush()
-                self.add_video_to_be_deleted_txt()
-                # 2d array that stores a sign's annotation so that it can all be written at once.
-                sign_annotations = []
-            full_annotation = [self.signs[self.sign_number], self.videos[self.i]]
+                done = QtWidgets.QMessageBox()
+                done.setWindowTitle("Annotations complete")
+                done.setText("All requested videos have now been annotated. You can view your annotations in annotations.csv.")
+                done.exec_()
+                app.quit()
+                return
+            elif self.i == len(self.videos) - 1:
+                self.text_label.setText(f"End of videos. Press {NEXT_KEY} to finish or {BACK_KEY} to return if some signs are unsaved.")
+            full_annotation = [self.sign, self.videos[self.i]]
             full_annotation.extend(self.recording_annotation)
-            if (self.i - len(invalid_files) == len(sign_annotations)):
+            if (self.i == len(sign_annotations)):
                 sign_annotations.append(full_annotation)
             elif ((annotation) != [""] * len(hotkeys)):
-                sign_annotations[self.i - len(invalid_files)] = full_annotation
+                sign_annotations[self.i] = full_annotation
             # switch to next video
             self.i += 1
             self.recording_annotation = ["" for i in range(len(hotkeys))]
             attributes = set()
-            self.text_label.setText(f"Current sign: {self.signs[self.sign_number]}. Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
+            self.text_label.setText(f"Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
             self.playFullVideo()
         elif key == REPLAY_KEY:
             video_done = True
             self.playFullVideo()
         elif key == BACK_KEY:
             if (self.i < len(self.videos)):
-                full_annotation = [self.signs[self.sign_number], self.videos[self.i]]
+                full_annotation = [self.sign, self.videos[self.i]]
                 full_annotation.extend(annotation)
-                if (self.i - len(invalid_files) == len(sign_annotations)):
+                if (self.i == len(sign_annotations)):
                     sign_annotations.append(full_annotation)
                 elif ((annotation) != [""] * len(hotkeys)):
-                    sign_annotations[self.i - len(invalid_files)] = full_annotation
-            if (self.i >= 1 + len(invalid_files)):
+                    sign_annotations[self.i] = full_annotation
+            if (self.i % 20 >= 1):
                 self.i -= 1
                 self.playFullVideo()
             self.recording_annotation = ["" for i in range(len(hotkeys))]
             video_done = True
             attributes = set()
-            self.text_label.setText(f"Current sign: {self.signs[self.sign_number]}. Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
+            self.text_label.setText(f"Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
         elif (key == '`'):
             done = QtWidgets.QMessageBox()
             done.setWindowTitle("Annotations complete")
@@ -257,8 +238,10 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--directory', required=True)
     # CSV file that annotations will be output to
     parser.add_argument('-o', '--output', default="annotations.csv")
-    # takes a list of 1 or more signs to annotate
-    parser.add_argument('-s', '--signs', nargs='+', required=True)
+    # takes a sign to annotate
+    parser.add_argument('-s', '--sign', required=True)
+    # takes a list of 1 or more users to annotate
+    parser.add_argument('-u', '--users', nargs='+', required=True)
 
     arguments = parser.parse_args()
     # Make a hotkey dict using the json file
@@ -268,10 +251,10 @@ if __name__ == '__main__':
     for key in hotkeys.keys():
         if(key == BACK_KEY or key == NEXT_KEY or key == REPLAY_KEY or key == DISPLAY_INFO):
             raise ValueError("Hotkeys cannot be the same as navigation keys")
-    # fast_annotate(arguments.directory, arguments.signs, hotkeys, arguments.output)
+    # fast_annotate(arguments.directory, arguments.users, hotkeys, arguments.output)
 
     app = QtWidgets.QApplication(sys.argv)
-    player = Player(directory=arguments.directory, signs=arguments.signs, hkeys=hotkeys, output=arguments.output)
+    player = Player(directory=arguments.directory, sign=arguments.sign, users=arguments.users, hkeys=hotkeys, output=arguments.output)
     player.show()
     player.resize(640, 480)
     sys.exit(app.exec_())
