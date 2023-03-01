@@ -36,15 +36,12 @@ i = 0
 current_video = ""
 app = None
 
-
-annotation = ["sign", "filename"]
 attribute_index_map = {}
     
 class Player(QtWidgets.QMainWindow):
     def __init__(self, parent=None, annotations=None, directory=None, sign=None, users=None, hkeys=None, output=None):
         global hotkey_info
         global video_done
-        global annotation
         global attribute_index_map
         global sign_annotations
         global full_annotation
@@ -101,20 +98,19 @@ class Player(QtWidgets.QMainWindow):
 
         self.i = 0
 
-
         self.reject_re = open("REJECT_RE.txt", 'a')
         self.reject_re.write(f"Session at time {str(datetime.datetime.now())}: \n")
 
         self.annotations_csv = open(output, 'a')
         self.csv_writer = csv.writer(self.annotations_csv)
 
-        self.hotkey_keys = hotkeys.keys()
+        self.hotkey_keys = list(hotkeys.keys())
         
         # sign and filename are the first 2 in any of the headers
-        annotation = ["sign", "filename"]
-        annotation.extend(hotkeys.values())
+        annotation_header = ["sign", "filename"]
+        annotation_header.extend(hotkeys.values())
         # Writes a header before each sign
-        self.csv_writer.writerow(annotation)
+        self.csv_writer.writerow(annotation_header)
         self.annotations_csv.flush()
         
         self.recording_annotation = ["" for i in range(len(hotkeys))]
@@ -140,12 +136,11 @@ class Player(QtWidgets.QMainWindow):
 
     def playFullVideo(self):
         global current_video
-        if self.i % 20 == 19:
-            self.text_label.setText("You are at a save checkpoint. Press '=' to save current annotations or " + BACK_KEY + " to return")
-            return
         self.text_label.setText(f"Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
         current_video = self.videos[self.i]
         print(current_video)
+        if self.i % 20 == 19:
+            self.tutorial_info.setText(f"You are at a save checkpoint. Press '=' to save current annotations or {BACK_KEY} to return. Press Attribute Keys to Add/Remove,({BACK_KEY}) to go back ({REPLAY_KEY}) to Replay, or ({NEXT_KEY}) to Proceed to Next Video")
         self.playVideo(os.path.join(self.sign_directory_path, current_video))
 
     def playVideo(self, filename):
@@ -157,7 +152,6 @@ class Player(QtWidgets.QMainWindow):
     def process_key(self, key):
         global hotkey_info
         global video_done
-        global annotation
         global attribute_index_map
         global sign_annotations
         global full_annotation
@@ -196,7 +190,7 @@ class Player(QtWidgets.QMainWindow):
             full_annotation.extend(self.recording_annotation)
             if (self.i == len(sign_annotations)):
                 sign_annotations.append(full_annotation)
-            elif ((annotation) != [""] * len(hotkeys)):
+            else:
                 sign_annotations[self.i] = full_annotation
             self.i += 1
             if self.i >= len(self.videos):
@@ -208,10 +202,10 @@ class Player(QtWidgets.QMainWindow):
                 attributes = set()
             else:
                 self.recording_annotation = sign_annotations[self.i][2:]
-                annotation = set()
+                attributes = set()
                 for idx, mark in enumerate(self.recording_annotation):
                     if mark == 'x':
-                        annotation.add(hotkeys[self.hotkey_keys[idx]])
+                        attributes.add(hotkeys[self.hotkey_keys[idx]])
             self.text_label.setText(f"Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
             self.playFullVideo()
         elif key == REPLAY_KEY:
@@ -220,20 +214,19 @@ class Player(QtWidgets.QMainWindow):
         elif key == BACK_KEY:
             if (self.i < len(self.videos)):
                 full_annotation = [self.sign, self.videos[self.i]]
-                full_annotation.extend(annotation)
+                full_annotation.extend(self.recording_annotation)
                 if (self.i == len(sign_annotations)):
                     sign_annotations.append(full_annotation)
-                elif ((annotation) != [""] * len(hotkeys)):
+                else:
                     sign_annotations[self.i] = full_annotation
             if (self.i % 20 >= 1):
                 self.i -= 1
                 self.recording_annotation = sign_annotations[self.i][2:]
-                annotation = set()
+                attributes = set()
                 for idx, mark in enumerate(self.recording_annotation):
                     if mark == 'x':
-                        annotation.add(hotkeys[self.hotkey_keys[idx]])
+                        attributes.add(hotkeys[self.hotkey_keys[idx]])
                 video_done = True
-                attributes = set()
                 self.text_label.setText(f"Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
                 self.playFullVideo()
         elif (key == '`'):
