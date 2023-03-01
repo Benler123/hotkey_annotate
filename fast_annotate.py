@@ -189,16 +189,17 @@ class Player(QtWidgets.QMainWindow):
                 done.exec_()
                 app.quit()
                 return
-            elif self.i == len(self.videos) - 1:
-                self.text_label.setText(f"End of videos. Press {NEXT_KEY} to finish or {BACK_KEY} to return if some signs are unsaved.")
             full_annotation = [self.sign, self.videos[self.i]]
             full_annotation.extend(self.recording_annotation)
             if (self.i == len(sign_annotations)):
                 sign_annotations.append(full_annotation)
             elif ((annotation) != [""] * len(hotkeys)):
                 sign_annotations[self.i] = full_annotation
-            # switch to next video
             self.i += 1
+            if self.i == len(self.videos):
+                self.text_label.setText(f"End of videos. Press {NEXT_KEY} to finish or {BACK_KEY} to return if some signs are unsaved.")
+                return
+            # switch to next video
             self.recording_annotation = ["" for i in range(len(hotkeys))]
             attributes = set()
             self.text_label.setText(f"Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
