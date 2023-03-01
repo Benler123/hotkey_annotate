@@ -235,7 +235,6 @@ class Player(QtWidgets.QMainWindow):
                 video_done = True
                 attributes = set()
                 self.text_label.setText(f"Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
-                annotation = full_annotation[self.i][2:]
                 self.playFullVideo()
         elif (key == '`'):
             done = QtWidgets.QMessageBox()
