@@ -39,7 +39,7 @@ app = None
 attribute_index_map = {}
     
 class Player(QtWidgets.QMainWindow):
-    def __init__(self, parent=None, annotations=None, directory=None, sign=None, users=None, hkeys=None, output=None):
+    def __init__(self, parent=None, annotations=None, directory=None, sign=None, users=None, hkeys=None, output=None, reject_path="", annotate_path=""):
         global hotkey_info
         global video_done
         global attribute_index_map
@@ -98,12 +98,6 @@ class Player(QtWidgets.QMainWindow):
 
         self.i = 0
 
-        self.reject_re = open("REJECT_RE.txt", 'a')
-        self.reject_re.write(f"Session at time {str(datetime.datetime.now())}: \n")
-
-        self.annotations_csv = open(output, 'a')
-        self.csv_writer = csv.writer(self.annotations_csv)
-
         self.hotkey_keys = list(hotkeys.keys())
         
         # sign and filename are the first 2 in any of the headers
@@ -120,8 +114,17 @@ class Player(QtWidgets.QMainWindow):
         self.sign = sign
         
         self.sign_directory_path = os.path.join(self.directory, sign)
+
         self.videos = os.listdir(self.sign_directory_path)
         self.videos.sort()
+
+        reject_re_path = os.path.join(self.sign_directory_path, "REJECT_RE.txt")
+        self.reject_re = open(reject_re_path, 'a')
+        self.reject_re.write(f"Session at time {str(datetime.datetime.now())}: \n")
+
+        annotations_csv_path = os.path.join(self.sign_directory_path, "annotations.csv")
+        self.annotations_csv = open(annotations_csv_path, 'a')
+        self.csv_writer = csv.writer(self.annotations_csv)
 
         self.playFullVideo()
 
