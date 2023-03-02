@@ -5,6 +5,7 @@ import argparse
 import datetime
 import sys
 import vlc
+from pathlib import Path
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 '''
@@ -39,7 +40,7 @@ app = None
 attribute_index_map = {}
     
 class Player(QtWidgets.QMainWindow):
-    def __init__(self, parent=None, annotations=None, directory=None, sign=None, users=None, hkeys=None, output=None, reject_path="", annotate_path=""):
+    def __init__(self, parent=None, annotations=None, directory=None, sign=None, hkeys=None, output_src=None, reject_path="", annotate_path=""):
         global hotkey_info
         global video_done
         global attribute_index_map
@@ -52,7 +53,6 @@ class Player(QtWidgets.QMainWindow):
 
         self.directory = directory
         hotkeys = hkeys
-        self.output = output
 
         attribute_index_map = {}
         for i, key in enumerate(hotkeys.keys()):
@@ -100,13 +100,6 @@ class Player(QtWidgets.QMainWindow):
 
         self.hotkey_keys = list(hotkeys.keys())
         
-        # sign and filename are the first 2 in any of the headers
-        annotation_header = ["sign", "filename"]
-        annotation_header.extend(hotkeys.values())
-        # Writes a header before each sign
-        self.csv_writer.writerow(annotation_header)
-        self.annotations_csv.flush()
-        
         self.recording_annotation = ["" for i in range(len(hotkeys))]
         # 2d array that stores a sign's annotation so that it can all be written at once.
         sign_annotations = []
@@ -118,13 +111,23 @@ class Player(QtWidgets.QMainWindow):
         self.videos = os.listdir(self.sign_directory_path)
         self.videos.sort()
 
-        reject_re_path = os.path.join(self.sign_directory_path, "REJECT_RE.txt")
+        output_path = os.path.join(output_src, sign)
+        Path(output_path).mkdir(parents=True, exist_ok=True)
+
+        reject_re_path = os.path.join(output_path, "REJECT_RE.txt")
         self.reject_re = open(reject_re_path, 'a')
         self.reject_re.write(f"Session at time {str(datetime.datetime.now())}: \n")
 
-        annotations_csv_path = os.path.join(self.sign_directory_path, "annotations.csv")
+        annotations_csv_path = os.path.join(output_path, "annotations.csv")
         self.annotations_csv = open(annotations_csv_path, 'a')
         self.csv_writer = csv.writer(self.annotations_csv)
+        
+        # sign and filename are the first 2 in any of the headers
+        annotation_header = ["sign", "filename"]
+        annotation_header.extend(hotkeys.values())
+        # Writes a header before each sign
+        self.csv_writer.writerow(annotation_header)
+        self.annotations_csv.flush()
 
         self.playFullVideo()
 
@@ -247,12 +250,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Pass in directories to annotate')
     # takes a path to the directory
     parser.add_argument('-d', '--directory', required=True)
-    # CSV file that annotations will be output to
-    parser.add_argument('-o', '--output', default="annotations.csv")
+    # Output directory where annotations and reject lists will be outputted
+    parser.add_argument('-o', '--output', default="")
     # takes a sign to annotate
     parser.add_argument('-s', '--sign', required=True)
-    # takes a list of 1 or more users to annotate
-    parser.add_argument('-u', '--users', nargs='+', required=True)
 
     arguments = parser.parse_args()
     # Make a hotkey dict using the json file
@@ -262,10 +263,9 @@ if __name__ == '__main__':
     for key in hotkeys.keys():
         if(key == BACK_KEY or key == NEXT_KEY or key == REPLAY_KEY or key == DISPLAY_INFO):
             raise ValueError("Hotkeys cannot be the same as navigation keys")
-    # fast_annotate(arguments.directory, arguments.users, hotkeys, arguments.output)
 
     app = QtWidgets.QApplication(sys.argv)
-    player = Player(directory=arguments.directory, sign=arguments.sign, users=arguments.users, hkeys=hotkeys, output=arguments.output)
+    player = Player(directory=arguments.directory, sign=arguments.sign, hkeys=hotkeys, output_src=arguments.output)
     player.show()
     player.resize(640, 480)
     sys.exit(app.exec_())
