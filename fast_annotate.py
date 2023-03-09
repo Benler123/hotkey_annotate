@@ -137,6 +137,8 @@ class Player(QtWidgets.QMainWindow):
         reject_re_set.clear()
 
     def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
+        if a0.isAutoRepeat():
+            return
         self.process_key(a0.text())
         return super().keyPressEvent(a0)
 
