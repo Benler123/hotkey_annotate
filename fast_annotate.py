@@ -149,6 +149,8 @@ class Player(QtWidgets.QMainWindow):
         print(current_video)
         if self.i % 20 == 19:
             self.tutorial_info.setText(f"You are at a save checkpoint. Press '=' to save current annotations or {BACK_KEY} to return. Press Attribute Keys to Add/Remove,({BACK_KEY}) to go back ({REPLAY_KEY}) to Replay, or ({NEXT_KEY}) to Proceed to Next Video")
+        else:
+            self.tutorial_info.setText("Press Attribute Keys to Add/Remove,(" + BACK_KEY + ") to go back (" + REPLAY_KEY + ") to Replay, or (" + NEXT_KEY + ") to Proceed to Next Video")
         self.playVideo(os.path.join(self.sign_directory_path, current_video))
 
     def playVideo(self, filename):
