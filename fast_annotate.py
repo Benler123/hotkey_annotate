@@ -88,7 +88,7 @@ class Player(QtWidgets.QMainWindow):
 
         self.tutorial_info = QtWidgets.QLabel()
         self.tutorial_info.setText("Press Attribute Keys to Add/Remove,(" + BACK_KEY + ") to go back (" + REPLAY_KEY + ") to Replay, or (" + NEXT_KEY + ") to Proceed to Next Video")
-        self.tutorial_info.setFixedHeight(40)
+        self.tutorial_info.setFixedHeight(20)
         lay.addWidget(self.tutorial_info)
         
         self.annotation_info = QtWidgets.QLabel()
@@ -195,6 +195,9 @@ class Player(QtWidgets.QMainWindow):
                 done.setText("All requested videos have now been annotated. You can view your annotations in annotations.csv.")
                 done.exec_()
                 app.quit()
+                return
+            if len(attributes) == 0:
+                # Do not allow the user to proceed unless an annotation has been made
                 return
             full_annotation = [self.sign, self.videos[self.i]]
             full_annotation.extend(self.recording_annotation)
