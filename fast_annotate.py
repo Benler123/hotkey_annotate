@@ -25,6 +25,8 @@ Make it so two hotkeys can't be the same
 BACK_KEY = "0"
 REPLAY_KEY = "-"
 NEXT_KEY = "="
+SPEED_UP_KEY = "]"
+SLOW_DOWN_KEY = "["
 DISPLAY_INFO = "9"
 hotkey_info = "Hotkey Info \n"
 video_done = False
@@ -87,7 +89,7 @@ class Player(QtWidgets.QMainWindow):
         lay.addWidget(self.text_label)
 
         self.tutorial_info = QtWidgets.QLabel()
-        self.tutorial_info.setText("Press Attribute Keys to Add/Remove,(" + BACK_KEY + ") to go back (" + REPLAY_KEY + ") to Replay, or (" + NEXT_KEY + ") to Proceed to Next Video")
+        self.tutorial_info.setText(f'Press Attribute Keys to Add/Remove, ({SPEED_UP_KEY}) to Speed Up the Video, ({SLOW_DOWN_KEY}) to Slow Down the Video(' + BACK_KEY + ") to go back, (" + REPLAY_KEY + ") to Replay, or (" + NEXT_KEY + ") to Proceed to Next Video")
         self.tutorial_info.setFixedHeight(20)
         lay.addWidget(self.tutorial_info)
         
@@ -95,6 +97,8 @@ class Player(QtWidgets.QMainWindow):
         self.annotation_info.setText("Annotation mapping: " + str(hotkeys))
         self.annotation_info.setFixedHeight(20)
         lay.addWidget(self.annotation_info)
+
+        self.playback_speed = 1.
 
         self.i = 0
 
@@ -156,7 +160,7 @@ class Player(QtWidgets.QMainWindow):
     def playVideo(self, filename):
         media = self.instance.media_new(filename)
         self.mediaplayer.set_media(media)
-        self.mediaplayer.set_rate(2)
+        self.mediaplayer.set_rate(self.playback_speed)
         self.mediaplayer.play()
 
     def process_key(self, key):
@@ -249,6 +253,12 @@ class Player(QtWidgets.QMainWindow):
             done.exec_()
             app.quit()
             return
+        elif key == SPEED_UP_KEY:
+            self.playback_speed *= 1.25
+            self.playFullVideo()
+        elif key == SLOW_DOWN_KEY:
+            self.playback_speed /= 1.25
+            self.playFullVideo()
         return self.i
 
 
