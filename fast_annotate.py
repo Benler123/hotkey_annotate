@@ -89,7 +89,7 @@ class Player(QtWidgets.QMainWindow):
         lay.addWidget(self.text_label)
 
         self.tutorial_info = QtWidgets.QLabel()
-        self.tutorial_info.setText(f'Press Attribute Keys to Add/Remove, ({SPEED_UP_KEY}) to Speed Up the Video, ({SLOW_DOWN_KEY}) to Slow Down the Video(' + BACK_KEY + ") to go back, (" + REPLAY_KEY + ") to Replay, or (" + NEXT_KEY + ") to Proceed to Next Video")
+        self.tutorial_info.setText(f'Press Attribute Keys to Add/Remove, ({SPEED_UP_KEY}) to Speed Up the Video, ({SLOW_DOWN_KEY}) to Slow Down the Video, (' + BACK_KEY + ") to go back, (" + REPLAY_KEY + ") to Replay, or (" + NEXT_KEY + ") to Proceed to Next Video")
         self.tutorial_info.setFixedHeight(20)
         lay.addWidget(self.tutorial_info)
         
@@ -152,9 +152,9 @@ class Player(QtWidgets.QMainWindow):
         current_video = self.videos[self.i]
         print(current_video)
         if self.i % 20 == 19:
-            self.tutorial_info.setText(f"You are at a save checkpoint. Press '=' to save current annotations or {BACK_KEY} to return. Press Attribute Keys to Add/Remove,({BACK_KEY}) to go back ({REPLAY_KEY}) to Replay, or ({NEXT_KEY}) to Proceed to Next Video")
+            self.tutorial_info.setText(f"You are at a save checkpoint. Press '=' to save current annotations, {BACK_KEY} to return, ({SPEED_UP_KEY}) to Speed Up the Video, ({SLOW_DOWN_KEY}) to Slow Down the Video, or ({REPLAY_KEY}) to replay.")
         else:
-            self.tutorial_info.setText("Press Attribute Keys to Add/Remove,(" + BACK_KEY + ") to go back (" + REPLAY_KEY + ") to Replay, or (" + NEXT_KEY + ") to Proceed to Next Video")
+            self.tutorial_info.setText(f'Press Attribute Keys to Add/Remove, ({SPEED_UP_KEY}) to Speed Up the Video, ({SLOW_DOWN_KEY}) to Slow Down the Video, (' + BACK_KEY + ") to go back, (" + REPLAY_KEY + ") to Replay, or (" + NEXT_KEY + ") to Proceed to Next Video")
         self.playVideo(os.path.join(self.sign_directory_path, current_video))
 
     def playVideo(self, filename):
