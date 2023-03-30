@@ -140,6 +140,10 @@ class Player(QtWidgets.QMainWindow):
             self.reject_re.write(video + "\n")
         reject_re_set.clear()
 
+    def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
+        self.playFullVideo()
+        return super().resizeEvent(a0)
+    
     def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
         if a0.isAutoRepeat():
             return
@@ -284,6 +288,8 @@ if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     player = Player(directory=arguments.directory, sign=arguments.sign, hkeys=hotkeys, output_src=arguments.output)
     player.show()
+    # Have this so that if the user minimizes it goes back to 640 x 480
     player.resize(640, 480)
+    player.showMaximized()
     sys.exit(app.exec_())
 
