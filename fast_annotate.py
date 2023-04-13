@@ -192,7 +192,7 @@ class Player(QtWidgets.QMainWindow):
 
             self.text_label.setText(f"Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
         elif key == NEXT_KEY:
-            if self.i >= len(self.videos):
+            if self.i == len(self.videos) - 1:
                 sign_annotations.sort()
                 self.csv_writer.writerows(sign_annotations)
                 self.annotations_csv.flush()
@@ -219,8 +219,8 @@ class Player(QtWidgets.QMainWindow):
                 self.annotations_csv.flush()
                 sign_annotations = []
             self.i += 1
-            if self.i >= len(self.videos):
-                self.text_label.setText(f"End of videos. Press {NEXT_KEY} to finish or {BACK_KEY} to return if some signs are unsaved.")
+            if self.i == len(self.videos) - 1:
+                self.text_label.setText(f"End of videos. Press {NEXT_KEY} to finish or {BACK_KEY} to return if some signs are unsaved. Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
                 return
             # switch to next video
             if ((self.i % 20) == (len(sign_annotations) % 20)):
@@ -237,13 +237,12 @@ class Player(QtWidgets.QMainWindow):
         elif key == REPLAY_KEY:
             self.playFullVideo()
         elif key == BACK_KEY:
-            if (self.i < len(self.videos)):
-                full_annotation = [self.sign, self.videos[self.i]]
-                full_annotation.extend(self.recording_annotation)
-                if (self.i == len(sign_annotations)):
-                    sign_annotations.append(full_annotation)
-                else:
-                    sign_annotations[self.i % 20] = full_annotation
+            full_annotation = [self.sign, self.videos[self.i]]
+            full_annotation.extend(self.recording_annotation)
+            if ((self.i % 20) == (len(sign_annotations) % 20)):
+                sign_annotations.append(full_annotation)
+            else:
+                sign_annotations[self.i % 20] = full_annotation
             if (self.i % 20 >= 1):
                 self.i -= 1
                 self.recording_annotation = sign_annotations[self.i % 20][2:]
