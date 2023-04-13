@@ -292,6 +292,5 @@ if __name__ == '__main__':
     player.show()
     # Have this so that if the user minimizes it goes back to 640 x 480
     player.resize(640, 480)
-    player.showMaximized()
     sys.exit(app.exec_())
 
