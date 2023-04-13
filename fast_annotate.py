@@ -29,7 +29,6 @@ SPEED_UP_KEY = "]"
 SLOW_DOWN_KEY = "["
 DISPLAY_INFO = "9"
 hotkey_info = "Hotkey Info \n"
-video_done = False
 sign_annotations = []
 full_annotation = []
 attributes = set()
@@ -44,7 +43,6 @@ attribute_index_map = {}
 class Player(QtWidgets.QMainWindow):
     def __init__(self, parent=None, annotations=None, directory=None, sign=None, hkeys=None, output_src=None, reject_path="", annotate_path=""):
         global hotkey_info
-        global video_done
         global attribute_index_map
         global sign_annotations
         global full_annotation
@@ -172,7 +170,6 @@ class Player(QtWidgets.QMainWindow):
 
     def process_key(self, key):
         global hotkey_info
-        global video_done
         global attribute_index_map
         global sign_annotations
         global full_annotation
@@ -238,7 +235,6 @@ class Player(QtWidgets.QMainWindow):
             self.text_label.setText(f"Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
             self.playFullVideo()
         elif key == REPLAY_KEY:
-            video_done = True
             self.playFullVideo()
         elif key == BACK_KEY:
             if (self.i < len(self.videos)):
@@ -255,7 +251,6 @@ class Player(QtWidgets.QMainWindow):
                 for idx, mark in enumerate(self.recording_annotation):
                     if mark == 'x':
                         attributes.add(hotkeys[self.hotkey_keys[idx]])
-                video_done = True
                 self.text_label.setText(f"Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
                 self.playFullVideo()
         elif (key == '`'):
