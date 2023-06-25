@@ -179,15 +179,15 @@ class Player(QtWidgets.QMainWindow):
         global app
         if key in hotkeys:
             if hotkeys[key] == "wrong/variant sign":
-                if(current_video in reject_re_set):
+                if current_video in reject_re_set:
                     reject_re_set.remove(current_video)
                 else:
                     reject_re_set.add(current_video)
-            if (self.recording_annotation[attribute_index_map[hotkeys[key]]] == ""):
-                self.recording_annotation[attribute_index_map[hotkeys[key]]] = 'x'
+            self.recording_annotation = []
+            self.recording_annotation[attribute_index_map[hotkeys[key]]] = 'x'
+            if self.recording_annotation[attribute_index_map[hotkeys[key]]] == "":
                 attributes.add(hotkeys[key])
             else:
-                self.recording_annotation[attribute_index_map[hotkeys[key]]] = ""
                 attributes.remove(hotkeys[key])
 
             self.text_label.setText(f"Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
