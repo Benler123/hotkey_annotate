@@ -41,7 +41,7 @@ app = None
 attribute_index_map = {}
     
 class Player(QtWidgets.QMainWindow):
-    def __init__(self, parent=None, annotations=None, directory=None, sign=None, hkeys=None, output_src=None, reject_path="", annotate_path=""):
+    def __init__(self, parent=None, annotations=None, directory=None, group=None, sign=None, hkeys=None, output_src=None, reject_path="", annotate_path=""):
         global hotkey_info
         global attribute_index_map
         global sign_annotations
@@ -120,7 +120,10 @@ class Player(QtWidgets.QMainWindow):
         self.reject_re = open(reject_re_path, 'a')
         self.reject_re.write(f"Session at time {str(datetime.datetime.now())}: \n")
 
-        annotations_csv_path = os.path.join(output_path, "annotations.csv")
+        group_no_special_symbols = ''.join(e for e in group if e.isalnum())
+        datetime_str = datetime.datetime.now().strftime('%y-%m-%d-%H:%M:%S')
+        annotation_filepath = os.path.join(output_path, f"{group_no_special_symbols}_{datetime_str}_annotations.csv")
+        annotations_csv_path = os.path.join(output_path, annotation_filepath)
         self.annotations_csv = open(annotations_csv_path, 'a')
         self.csv_writer = csv.writer(self.annotations_csv)
         
@@ -178,7 +181,7 @@ class Player(QtWidgets.QMainWindow):
         global current_video
         global app
         if key in hotkeys:
-            if (hotkeys[key] == "wrong/variant sign"):
+            if hotkeys[key] == "wrong/variant sign":
                 if(current_video in reject_re_set):
                     reject_re_set.remove(current_video)
                 else:
@@ -271,8 +274,10 @@ class Player(QtWidgets.QMainWindow):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Pass in directories to annotate')
-    # takes a path to the directory
+    # takes a path to the source directory
     parser.add_argument('-d', '--directory', required=True)
+    # takes the group of signs (a subdirectory) in the source directory to be annotated
+    parser.add_argument('-g', '--group', required=True)
     # Output directory where annotations and reject lists will be outputted
     parser.add_argument('-o', '--output', default="")
     # takes a sign to annotate
@@ -288,7 +293,7 @@ if __name__ == '__main__':
             raise ValueError("Hotkeys cannot be the same as navigation keys")
 
     app = QtWidgets.QApplication(sys.argv)
-    player = Player(directory=arguments.directory, sign=arguments.sign, hkeys=hotkeys, output_src=arguments.output)
+    player = Player(directory=arguments.directory, group=arguments.group, sign=arguments.sign, hkeys=hotkeys, output_src=arguments.output)
     player.show()
     # Have this so that if the user minimizes it goes back to 640 x 480
     player.resize(640, 480)
