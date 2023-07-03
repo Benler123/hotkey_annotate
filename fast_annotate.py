@@ -85,17 +85,17 @@ class Player(QtWidgets.QMainWindow):
 
         self.text_label = QtWidgets.QLabel()
         self.text_label.setText("Current sign:")
-        self.text_label.setFixedHeight(20)
+        self.text_label.setFixedHeight(40)
         lay.addWidget(self.text_label)
 
         self.tutorial_info = QtWidgets.QLabel()
         self.tutorial_info.setText(f'Press Attribute Keys to Add/Remove, ({SPEED_UP_KEY}) to Speed Up the Video, ({SLOW_DOWN_KEY}) to Slow Down the Video, (' + BACK_KEY + ") to go back, (" + REPLAY_KEY + ") to Replay, or (" + NEXT_KEY + ") to Proceed to Next Video")
-        self.tutorial_info.setFixedHeight(20)
+        self.tutorial_info.setFixedHeight(40)
         lay.addWidget(self.tutorial_info)
         
         self.annotation_info = QtWidgets.QLabel()
         self.annotation_info.setText("Annotation mapping: " + str(hotkeys))
-        self.annotation_info.setFixedHeight(20)
+        self.annotation_info.setFixedHeight(40)
         lay.addWidget(self.annotation_info)
 
         self.playback_speed = 1.
