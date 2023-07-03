@@ -83,17 +83,17 @@ class Player(QtWidgets.QMainWindow):
 
         self.text_label = QtWidgets.QLabel()
         self.text_label.setText("Current sign:")
-        self.text_label.setFixedHeight(20)
+        self.text_label.setFixedHeight(40)
         lay.addWidget(self.text_label)
 
         self.tutorial_info = QtWidgets.QLabel()
         self.tutorial_info.setText(f'Press Attribute Keys to Add/Remove, ({SPEED_UP_KEY}) to Speed Up the Video, ({SLOW_DOWN_KEY}) to Slow Down the Video, ({BACK_KEY}) to go back, ({REPLAY_KEY}) to Replay, or ({NEXT_KEY}) to Proceed to Next Video')
-        self.tutorial_info.setFixedHeight(20)
+        self.tutorial_info.setFixedHeight(40)
         lay.addWidget(self.tutorial_info)
         
         self.annotation_info = QtWidgets.QLabel()
         self.annotation_info.setText("Annotation mapping: " + str(hotkeys))
-        self.annotation_info.setFixedHeight(20)
+        self.annotation_info.setFixedHeight(40)
         lay.addWidget(self.annotation_info)
 
         self.playback_speed = 1.
@@ -156,10 +156,7 @@ class Player(QtWidgets.QMainWindow):
         self.text_label.setText(f"Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
         current_video = self.videos[self.i]
         print(current_video)
-        if self.i % 20 == 19:
-            self.tutorial_info.setText(f"You are at a save checkpoint. Press '=' to save current annotations, {BACK_KEY} to return, ({SPEED_UP_KEY}) to Speed Up the Video, ({SLOW_DOWN_KEY}) to Slow Down the Video, or ({REPLAY_KEY}) to replay.")
-        else:
-            self.tutorial_info.setText(f'Press Attribute Keys to Add/Remove, ({SPEED_UP_KEY}) to Speed Up the Video, ({SLOW_DOWN_KEY}) to Slow Down the Video, (' + BACK_KEY + ") to go back, (" + REPLAY_KEY + ') to Replay, or (' + NEXT_KEY + ") to Proceed to Next Video")
+        self.tutorial_info.setText(f'Press Attribute Keys to Add/Remove, ({SPEED_UP_KEY}) to Speed Up the Video, ({SLOW_DOWN_KEY}) to Slow Down the Video, (' + BACK_KEY + ") to go back, (" + REPLAY_KEY + ') to Replay, or (' + NEXT_KEY + ") to Proceed to Next Video")
         self.playVideo(os.path.join(self.sign_directory_path, current_video))
 
     def playVideo(self, filename, end_callback=None):
@@ -196,8 +193,6 @@ class Player(QtWidgets.QMainWindow):
             self.text_label.setText(f"Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
         elif key == NEXT_KEY:
             if self.i == len(self.videos) - 1:
-                sign_annotations.sort()
-                self.csv_writer.writerows(sign_annotations)
                 self.annotations_csv.flush()
                 self.add_video_to_be_deleted_txt()
                 self.i = 0
@@ -212,25 +207,22 @@ class Player(QtWidgets.QMainWindow):
                 return
             full_annotation = [self.sign, self.videos[self.i]]
             full_annotation.extend(self.recording_annotation)
-            if ((self.i % 20) == (len(sign_annotations) % 20)):
+            self.csv_writer.writerow(full_annotation)
+            self.annotations_csv.flush()
+            if self.i == len(sign_annotations):
                 sign_annotations.append(full_annotation)
             else:
-                sign_annotations[self.i % 20] = full_annotation
-            if self.i % 20 == 19:
-                sign_annotations.sort()
-                self.csv_writer.writerows(sign_annotations)
-                self.annotations_csv.flush()
-                sign_annotations = []
+                sign_annotations[self.i] = full_annotation
             self.i += 1
             if self.i == len(self.videos) - 1:
                 self.text_label.setText(f"End of videos. Press {NEXT_KEY} to finish or {BACK_KEY} to return if some signs are unsaved. Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
                 return
             # switch to next video
-            if ((self.i % 20) == (len(sign_annotations) % 20)):
+            if self.i == len(sign_annotations):
                 self.recording_annotation = ["" for i in range(len(hotkeys))]
                 attributes = set()
             else:
-                self.recording_annotation = sign_annotations[self.i % 20][2:]
+                self.recording_annotation = sign_annotations[self.i][2:]
                 attributes = set()
                 for idx, mark in enumerate(self.recording_annotation):
                     if mark == 'x':
@@ -242,13 +234,13 @@ class Player(QtWidgets.QMainWindow):
         elif key == BACK_KEY:
             full_annotation = [self.sign, self.videos[self.i]]
             full_annotation.extend(self.recording_annotation)
-            if ((self.i % 20) == (len(sign_annotations) % 20)):
+            if self.i == len(sign_annotations):
                 sign_annotations.append(full_annotation)
             else:
-                sign_annotations[self.i % 20] = full_annotation
-            if (self.i % 20 >= 1):
+                sign_annotations[self.i] = full_annotation
+            if self.i >= 1:
                 self.i -= 1
-                self.recording_annotation = sign_annotations[self.i % 20][2:]
+                self.recording_annotation = sign_annotations[self.i][2:]
                 attributes = set()
                 for idx, mark in enumerate(self.recording_annotation):
                     if mark == 'x':
