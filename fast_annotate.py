@@ -232,12 +232,13 @@ class Player(QtWidgets.QMainWindow):
         elif key == REPLAY_KEY:
             self.playFullVideo()
         elif key == BACK_KEY:
-            full_annotation = [self.sign, self.videos[self.i]]
-            full_annotation.extend(self.recording_annotation)
-            if self.i == len(sign_annotations):
-                sign_annotations.append(full_annotation)
-            else:
-                sign_annotations[self.i] = full_annotation
+            if self.i < len(self.videos):
+                full_annotation = [self.sign, self.videos[self.i]]
+                full_annotation.extend(self.recording_annotation)
+                if self.i == len(sign_annotations):
+                    sign_annotations.append(full_annotation)
+                else:
+                    sign_annotations[self.i] = full_annotation
             if self.i >= 1:
                 self.i -= 1
                 self.recording_annotation = sign_annotations[self.i][2:]
