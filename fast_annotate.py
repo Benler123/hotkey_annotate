@@ -11,8 +11,8 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 '''
 TODO
 Make it so you can start where you left off
-Make it so the hotkeys can't be setkeys
-Make it so two hotkeys can't be the same 
+Make it so the self.hotkeys can't be setkeys
+Make it so two self.hotkeys can't be the same 
 '''
 
 # Once the csv is written to, it is very hard to overwrite
@@ -28,36 +28,18 @@ NEXT_KEY = "="
 SPEED_UP_KEY = "]"
 SLOW_DOWN_KEY = "["
 DISPLAY_INFO = "9"
-hotkey_info = "Hotkey Info \n"
-sign_annotations = []
-full_annotation = []
-attributes = set()
-hotkeys = {}
-reject_re_set = set()
-i = 0
-current_video = ""
 app = None
-
-attribute_index_map = {}
     
 class Player(QtWidgets.QMainWindow):
-    def __init__(self, parent=None, annotations=None, directory=None, group=None, sign=None, hkeys=None, output_src=None, reject_path="", annotate_path=""):
-        global hotkey_info
-        global attribute_index_map
-        global sign_annotations
-        global full_annotation
-        global attributes
-        global hotkeys
-        global i
-        global current_video
-
+    def __init__(self, parent=None, annotations=None, directory=None, group=None, sign=None, hotkeys=None, output_src=None, reject_path="", annotate_path=""):
         self.directory = directory
-        hotkeys = hkeys
+        self.hotkeys = hotkeys
 
-        attribute_index_map = {}
-        for i, key in enumerate(hotkeys.keys()):
-            attribute_index_map[hotkeys[key]] = i
-            hotkey_info = hotkey_info + " {} : {} \n".format(key, hotkeys[key])
+        self.attribute_index_map = {}
+        for i, key in enumerate(self.hotkeys.keys()):
+            self.attribute_index_map[self.hotkeys[key]] = i
+            
+        self.current_video = ""
         
         super(Player, self).__init__(parent)
         self.setWindowTitle("Media Player")
@@ -92,7 +74,7 @@ class Player(QtWidgets.QMainWindow):
         lay.addWidget(self.tutorial_info)
         
         self.annotation_info = QtWidgets.QLabel()
-        self.annotation_info.setText("Annotation mapping: " + str(hotkeys))
+        self.annotation_info.setText("Annotation mapping: " + str(self.hotkeys))
         self.annotation_info.setFixedHeight(40)
         lay.addWidget(self.annotation_info)
 
@@ -100,11 +82,11 @@ class Player(QtWidgets.QMainWindow):
 
         self.i = 0
 
-        self.hotkey_keys = list(hotkeys.keys())
+        self.hotkey_keys = list(self.hotkeys.keys())
         
-        self.recording_annotation = ["" for i in range(len(hotkeys))]
+        self.recording_annotation = ["" for i in range(len(self.hotkeys))]
         # 2d array that stores a sign's annotation so that it can all be written at once.
-        sign_annotations = []
+        self.sign_annotations = []
 
         self.sign = sign
         
@@ -115,6 +97,8 @@ class Player(QtWidgets.QMainWindow):
 
         output_path = os.path.join(output_src, sign)
         Path(output_path).mkdir(parents=True, exist_ok=True)
+
+        self.reject_re_set = set()
 
         reject_re_path = os.path.join(output_path, "REJECT_RE.txt")
         self.reject_re = open(reject_re_path, 'w')
@@ -130,17 +114,19 @@ class Player(QtWidgets.QMainWindow):
         
         # sign and filename are the first 2 in any of the headers
         annotation_header = ["sign", "filename"]
-        annotation_header.extend(hotkeys.values())
+        annotation_header.extend(self.hotkeys.values())
         # Writes a header before each sign
         self.csv_writer.writerow(annotation_header)
         self.annotations_csv.flush()
 
+        self.attributes = set()
+
         self.playFullVideo()
 
     def add_video_to_be_deleted_txt(self):
-        for video in reject_re_set:
+        for video in self.reject_re_set:
             self.reject_re.write(video + "\n")
-        reject_re_set.clear()
+        self.reject_re_set.clear()
 
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
         self.playFullVideo()
@@ -153,12 +139,11 @@ class Player(QtWidgets.QMainWindow):
         return super().keyPressEvent(a0)
 
     def playFullVideo(self):
-        global current_video
-        self.text_label.setText(f"Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
-        current_video = self.videos[self.i]
-        print(current_video)
+        self.text_label.setText(f"Current self.attributes Are " + (str(self.attributes) if len(self.attributes) != 0 else ""))
+        self.current_video = self.videos[self.i]
+        print(self.current_video)
         self.tutorial_info.setText(f'Press Attribute Keys to Add/Remove, ({SPEED_UP_KEY}) to Speed Up the Video, ({SLOW_DOWN_KEY}) to Slow Down the Video, (' + BACK_KEY + ") to go back, (" + REPLAY_KEY + ') to Replay, or (' + NEXT_KEY + ") to Proceed to Next Video")
-        self.playVideo(os.path.join(self.sign_directory_path, current_video))
+        self.playVideo(os.path.join(self.sign_directory_path, self.current_video))
 
     def playVideo(self, filename, end_callback=None):
         media = self.instance.media_new(filename)
@@ -170,28 +155,21 @@ class Player(QtWidgets.QMainWindow):
         self.mediaplayer.play()
 
     def process_key(self, key):
-        global hotkey_info
-        global attribute_index_map
-        global sign_annotations
-        global full_annotation
-        global attributes
-        global hotkeys
-        global current_video
         global app
-        if key in hotkeys:
-            if hotkeys[key] == "wrong/variant sign":
-                if current_video in reject_re_set:
-                    reject_re_set.remove(current_video)
+        if key in self.hotkeys:
+            if self.hotkeys[key] == "wrong/variant sign":
+                if self.current_video in self.reject_re_set:
+                    self.reject_re_set.remove(self.current_video)
                 else:
-                    reject_re_set.add(current_video)
-            if self.recording_annotation[attribute_index_map[hotkeys[key]]] == "":
-                self.recording_annotation[attribute_index_map[hotkeys[key]]] = 'x'
-                attributes.add(hotkeys[key])
+                    self.reject_re_set.add(self.current_video)
+            if self.recording_annotation[self.attribute_index_map[self.hotkeys[key]]] == "":
+                self.recording_annotation[self.attribute_index_map[self.hotkeys[key]]] = 'x'
+                self.attributes.add(self.hotkeys[key])
             else:
-                self.recording_annotation[attribute_index_map[hotkeys[key]]] = ''
-                attributes.remove(hotkeys[key])
+                self.recording_annotation[self.attribute_index_map[self.hotkeys[key]]] = ''
+                self.attributes.remove(self.hotkeys[key])
 
-            self.text_label.setText(f"Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
+            self.text_label.setText(f"Current self.attributes Are " + (str(self.attributes) if len(self.attributes) != 0 else ""))
         elif key == NEXT_KEY:
             if self.i == len(self.videos):
                 self.annotations_csv.flush()
@@ -203,32 +181,32 @@ class Player(QtWidgets.QMainWindow):
                 done.exec_()
                 app.quit()
                 return
-            if len(attributes) == 0:
+            if len(self.attributes) == 0:
                 # Do not allow the user to proceed unless an annotation has been made
                 return
             full_annotation = [self.sign, self.videos[self.i]]
             full_annotation.extend(self.recording_annotation)
             self.csv_writer.writerow(full_annotation)
             self.annotations_csv.flush()
-            if self.i == len(sign_annotations):
-                sign_annotations.append(full_annotation)
+            if self.i == len(self.sign_annotations):
+                self.sign_annotations.append(full_annotation)
             else:
-                sign_annotations[self.i] = full_annotation
+                self.sign_annotations[self.i] = full_annotation
             self.i += 1
             if self.i == len(self.videos):
-                self.text_label.setText(f"End of videos. Press {NEXT_KEY} to finish or {BACK_KEY} to return if some signs are unsaved. Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
+                self.text_label.setText(f"End of videos. Press {NEXT_KEY} to finish or {BACK_KEY} to return if some signs are unsaved. Current self.attributes Are " + (str(self.attributes) if len(self.attributes) != 0 else ""))
                 return
             # switch to next video
-            if self.i == len(sign_annotations):
-                self.recording_annotation = ["" for i in range(len(hotkeys))]
-                attributes = set()
+            if self.i == len(self.sign_annotations):
+                self.recording_annotation = ["" for i in range(len(self.hotkeys))]
+                self.attributes = set()
             else:
-                self.recording_annotation = sign_annotations[self.i][2:]
-                attributes = set()
+                self.recording_annotation = self.sign_annotations[self.i][2:]
+                self.attributes = set()
                 for idx, mark in enumerate(self.recording_annotation):
                     if mark == 'x':
-                        attributes.add(hotkeys[self.hotkey_keys[idx]])
-            self.text_label.setText(f"Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
+                        self.attributes.add(self.hotkeys[self.hotkey_keys[idx]])
+            self.text_label.setText(f"Current self.attributes Are " + (str(self.attributes) if len(self.attributes) != 0 else ""))
             self.playFullVideo()
         elif key == REPLAY_KEY:
             self.playFullVideo()
@@ -236,18 +214,18 @@ class Player(QtWidgets.QMainWindow):
             if self.i < len(self.videos):
                 full_annotation = [self.sign, self.videos[self.i]]
                 full_annotation.extend(self.recording_annotation)
-                if self.i == len(sign_annotations):
-                    sign_annotations.append(full_annotation)
+                if self.i == len(self.sign_annotations):
+                    self.sign_annotations.append(full_annotation)
                 else:
-                    sign_annotations[self.i] = full_annotation
+                    self.sign_annotations[self.i] = full_annotation
             if self.i >= 1:
                 self.i -= 1
-                self.recording_annotation = sign_annotations[self.i][2:]
-                attributes = set()
+                self.recording_annotation = self.sign_annotations[self.i][2:]
+                self.attributes = set()
                 for idx, mark in enumerate(self.recording_annotation):
                     if mark == 'x':
-                        attributes.add(hotkeys[self.hotkey_keys[idx]])
-                self.text_label.setText(f"Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
+                        self.attributes.add(self.hotkeys[self.hotkey_keys[idx]])
+                self.text_label.setText(f"Current self.attributes Are " + (str(self.attributes) if len(self.attributes) != 0 else ""))
                 self.playFullVideo()
         elif (key == '`'):
             done = QtWidgets.QMessageBox()
@@ -279,15 +257,15 @@ if __name__ == '__main__':
 
     arguments = parser.parse_args()
     # Make a hotkey dict using the json file
-    file = open("hotkeys.json")
+    file = open("self.hotkeys.json")
     hotkeys = json.load(file)
     file.close()
     for key in hotkeys.keys():
         if(key == BACK_KEY or key == NEXT_KEY or key == REPLAY_KEY or key == DISPLAY_INFO):
-            raise ValueError("Hotkeys cannot be the same as navigation keys")
+            raise ValueError("self.hotkeys cannot be the same as navigation keys")
 
     app = QtWidgets.QApplication(sys.argv)
-    player = Player(directory=arguments.directory, group=arguments.group, sign=arguments.sign, hkeys=hotkeys, output_src=arguments.output)
+    player = Player(directory=arguments.directory, group=arguments.group, sign=arguments.sign, hotkeys=hotkeys, output_src=arguments.output)
     player.show()
     # Have this so that if the user minimizes it goes back to 640 x 480
     player.resize(640, 480)
