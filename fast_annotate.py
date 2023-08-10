@@ -117,14 +117,14 @@ class Player(QtWidgets.QMainWindow):
         Path(output_path).mkdir(parents=True, exist_ok=True)
 
         reject_re_path = os.path.join(output_path, "REJECT_RE.txt")
-        self.reject_re = open(reject_re_path, 'a')
+        self.reject_re = open(reject_re_path, 'w')
         self.reject_re.write(f"Session at time {str(datetime.datetime.now())}: \n")
 
         group_no_special_symbols = ''.join(e for e in group if e.isalnum())
         datetime_str = datetime.datetime.now().strftime('%y-%m-%d-%H:%M:%S')
         annotation_filepath = os.path.join(output_path, f"{group_no_special_symbols}_{datetime_str}_annotations.csv")
         annotations_csv_path = os.path.join(output_path, annotation_filepath)
-        self.annotations_csv = open(annotations_csv_path, 'a')
+        self.annotations_csv = open(annotations_csv_path, 'w')
         self.csv_writer = csv.writer(self.annotations_csv)
         
         # sign and filename are the first 2 in any of the headers
