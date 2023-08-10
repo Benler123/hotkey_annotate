@@ -192,7 +192,7 @@ class Player(QtWidgets.QMainWindow):
 
             self.text_label.setText(f"Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
         elif key == NEXT_KEY:
-            if self.i == len(self.videos) - 1:
+            if self.i == len(self.videos):
                 self.annotations_csv.flush()
                 self.add_video_to_be_deleted_txt()
                 self.i = 0
@@ -214,7 +214,7 @@ class Player(QtWidgets.QMainWindow):
             else:
                 sign_annotations[self.i] = full_annotation
             self.i += 1
-            if self.i == len(self.videos) - 1:
+            if self.i == len(self.videos):
                 self.text_label.setText(f"End of videos. Press {NEXT_KEY} to finish or {BACK_KEY} to return if some signs are unsaved. Current Attributes Are " + (str(attributes) if len(attributes) != 0 else ""))
                 return
             # switch to next video
