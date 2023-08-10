@@ -257,7 +257,7 @@ if __name__ == '__main__':
 
     arguments = parser.parse_args()
     # Make a hotkey dict using the json file
-    file = open("self.hotkeys.json")
+    file = open("hotkeys.json")
     hotkeys = json.load(file)
     file.close()
     for key in hotkeys.keys():
