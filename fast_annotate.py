@@ -31,7 +31,8 @@ DISPLAY_INFO = "9"
 app = None
     
 class Player(QtWidgets.QMainWindow):
-    def __init__(self, parent=None, annotations=None, directory=None, group=None, sign=None, hotkeys=None, output_src=None, reject_path="", annotate_path=""):
+    def __init__(self, parent=None, annotations=None, directory=None, group=None, sign=None, hotkeys=None,
+                 output_src=None, ignore_existing=False):
         self.directory = directory
         self.hotkeys = hotkeys
 
@@ -69,7 +70,9 @@ class Player(QtWidgets.QMainWindow):
         lay.addWidget(self.text_label)
 
         self.tutorial_info = QtWidgets.QLabel()
-        self.tutorial_info.setText(f'Press Attribute Keys to Add/Remove, ({SPEED_UP_KEY}) to Speed Up the Video, ({SLOW_DOWN_KEY}) to Slow Down the Video, ({BACK_KEY}) to go back, ({REPLAY_KEY}) to Replay, or ({NEXT_KEY}) to Proceed to Next Video')
+        self.tutorial_info.setText(f'Press Attribute Keys to Add/Remove, ({SPEED_UP_KEY}) to Speed Up the Video, '
+                                   f'({SLOW_DOWN_KEY}) to Slow Down the Video, ({BACK_KEY}) to go back, ({REPLAY_KEY}) '
+                                   f'to Replay, or ({NEXT_KEY}) to Proceed to Next Video')
         self.tutorial_info.setFixedHeight(40)
         lay.addWidget(self.tutorial_info)
         
@@ -123,7 +126,7 @@ class Player(QtWidgets.QMainWindow):
 
         self.playFullVideo()
 
-    def add_video_to_be_deleted_txt(self):
+    def addVideoToBeDeletedTxt(self):
         for video in self.reject_re_set:
             self.reject_re.write(video + "\n")
         self.reject_re_set.clear()
@@ -139,10 +142,12 @@ class Player(QtWidgets.QMainWindow):
         return super().keyPressEvent(a0)
 
     def playFullVideo(self):
-        self.text_label.setText(f"Current self.attributes Are " + (str(self.attributes) if len(self.attributes) != 0 else ""))
+        self.text_label.setText(f"Current attributes are " + str(self.attributes))
         self.current_video = self.videos[self.i]
         print(self.current_video)
-        self.tutorial_info.setText(f'Press Attribute Keys to Add/Remove, ({SPEED_UP_KEY}) to Speed Up the Video, ({SLOW_DOWN_KEY}) to Slow Down the Video, (' + BACK_KEY + ") to go back, (" + REPLAY_KEY + ') to Replay, or (' + NEXT_KEY + ") to Proceed to Next Video")
+        self.tutorial_info.setText(f'Press Attribute Keys to Add/Remove, ({SPEED_UP_KEY}) to Speed Up the Video, '
+                                   f'({SLOW_DOWN_KEY}) to Slow Down the Video, ({BACK_KEY}) to go back, ({REPLAY_KEY}) '
+                                   f'to Replay, or ({NEXT_KEY}) to Proceed to Next Video")')
         self.playVideo(os.path.join(self.sign_directory_path, self.current_video))
 
     def playVideo(self, filename, end_callback=None):
@@ -169,15 +174,16 @@ class Player(QtWidgets.QMainWindow):
                 self.recording_annotation[self.attribute_index_map[self.hotkeys[key]]] = ''
                 self.attributes.remove(self.hotkeys[key])
 
-            self.text_label.setText(f"Current self.attributes Are " + (str(self.attributes) if len(self.attributes) != 0 else ""))
+            self.text_label.setText(f"Current attributes are {str(self.attributes)}")
         elif key == NEXT_KEY:
             if self.i == len(self.videos):
                 self.annotations_csv.flush()
-                self.add_video_to_be_deleted_txt()
+                self.addVideoToBeDeletedTxt()
                 self.i = 0
                 done = QtWidgets.QMessageBox()
                 done.setWindowTitle("Annotations complete")
-                done.setText("All requested videos have now been annotated. You can view your annotations in annotations.csv.")
+                done.setText("All requested videos have now been annotated. You can view your annotations in "
+                             "annotations.csv.")
                 done.exec_()
                 app.quit()
                 return
@@ -194,7 +200,8 @@ class Player(QtWidgets.QMainWindow):
                 self.sign_annotations[self.i] = full_annotation
             self.i += 1
             if self.i == len(self.videos):
-                self.text_label.setText(f"End of videos. Press {NEXT_KEY} to finish or {BACK_KEY} to return if some signs are unsaved. Current self.attributes Are " + (str(self.attributes) if len(self.attributes) != 0 else ""))
+                self.text_label.setText(f"End of videos. Press {NEXT_KEY} to finish or {BACK_KEY} to return if some "
+                                        f"signs are unsaved. Current attributes are {str(self.attributes)}")
                 return
             # switch to next video
             if self.i == len(self.sign_annotations):
@@ -206,7 +213,7 @@ class Player(QtWidgets.QMainWindow):
                 for idx, mark in enumerate(self.recording_annotation):
                     if mark == 'x':
                         self.attributes.add(self.hotkeys[self.hotkey_keys[idx]])
-            self.text_label.setText(f"Current self.attributes Are " + (str(self.attributes) if len(self.attributes) != 0 else ""))
+            self.text_label.setText(f"Current attributes Are {str(self.attributes)}")
             self.playFullVideo()
         elif key == REPLAY_KEY:
             self.playFullVideo()
@@ -225,12 +232,13 @@ class Player(QtWidgets.QMainWindow):
                 for idx, mark in enumerate(self.recording_annotation):
                     if mark == 'x':
                         self.attributes.add(self.hotkeys[self.hotkey_keys[idx]])
-                self.text_label.setText(f"Current self.attributes Are " + (str(self.attributes) if len(self.attributes) != 0 else ""))
+                self.text_label.setText(f"Current attributes are {str(self.attributes)}")
                 self.playFullVideo()
-        elif (key == '`'):
+        elif key == '`':
             done = QtWidgets.QMessageBox()
             done.setWindowTitle("Annotations complete")
-            done.setText("All requested videos have now been annotated. You can view your annotations in annotations.csv.")
+            done.setText("All requested videos have now been annotated. You can view your annotations in "
+                         "annotations.csv.")
             done.exec_()
             app.quit()
             return
@@ -262,7 +270,7 @@ if __name__ == '__main__':
     file.close()
     for key in hotkeys.keys():
         if(key == BACK_KEY or key == NEXT_KEY or key == REPLAY_KEY or key == DISPLAY_INFO):
-            raise ValueError("self.hotkeys cannot be the same as navigation keys")
+            raise ValueError("hotkeys cannot be the same as navigation keys")
 
     app = QtWidgets.QApplication(sys.argv)
     player = Player(directory=arguments.directory, group=arguments.group, sign=arguments.sign, hotkeys=hotkeys, output_src=arguments.output)
