@@ -169,6 +169,10 @@ class Player(QtWidgets.QMainWindow):
             if filename in self.preannotated:
                 if self.preannotated[filename][self.hotkeys[key]] == 'x':
                     self.recording_annotation[idx] = 'x'
+        self.attributes = set()
+        for idx, mark in enumerate(self.recording_annotation):
+            if mark == 'x':
+                self.attributes.add(self.hotkeys[self.hotkey_keys[idx]])
 
     def exitPlayer(self):
         done = QtWidgets.QMessageBox()
