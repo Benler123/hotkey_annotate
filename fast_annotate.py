@@ -111,7 +111,6 @@ class Player(QtWidgets.QMainWindow):
             if os.path.exists(annotation_filepath):
                 csv_exists = True
             existing_annotations = pd.read_csv(annotation_filepath)
-            self.annotated_files = set(existing_annotations.name.unique())
             existing_annotations.drop_duplicates(subset='sign', keep='last')
 
             for index, row in existing_annotations.iterrows():
