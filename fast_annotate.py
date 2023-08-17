@@ -253,7 +253,6 @@ class Player(QtWidgets.QMainWindow):
             if self.i == len(self.sign_annotations):
                 self.resetCurrentAnnotation()
                 self.loadAnnotationFromCSV()
-                self.attributes = set()
             else:
                 self.loadExistingAnnotation()
             self.playFullVideo()
