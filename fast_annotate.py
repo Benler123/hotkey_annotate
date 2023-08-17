@@ -5,6 +5,7 @@ import argparse
 import datetime
 import sys
 import vlc
+import pandas as pd
 from pathlib import Path
 from PyQt5 import QtCore, QtGui, QtWidgets
 
@@ -101,28 +102,45 @@ class Player(QtWidgets.QMainWindow):
         output_path = os.path.join(output_src, sign)
         Path(output_path).mkdir(parents=True, exist_ok=True)
 
+        # see which files have already been annotated
+        self.annotated_files = set()
+        self.preannotated = {}
+        csv_exists = False
+        if not ignore_existing:
+            annotation_filepath = os.path.join(output_path, "annotations.csv")
+            if os.path.exists(annotation_filepath):
+                csv_exists = True
+            existing_annotations = pd.read_csv(annotation_filepath)
+            self.annotated_files = set(existing_annotations.name.unique())
+            existing_annotations.drop_duplicates(subset='sign', keep='last')
+
+            for index, row in existing_annotations.iterrows():
+                self.preannotated[row['filename']] = row
+
         self.reject_re_set = set()
 
         reject_re_path = os.path.join(output_path, "REJECT_RE.txt")
-        self.reject_re = open(reject_re_path, 'w')
+        self.reject_re = open(reject_re_path, 'a')
         self.reject_re.write(f"Session at time {str(datetime.datetime.now())}: \n")
 
         # group_no_special_symbols = ''.join(e for e in group if e.isalnum())
         # datetime_str = datetime.datetime.now().strftime('%y-%m-%d-%H:%M:%S')
         # annotation_filepath = os.path.join(output_path, f"{group_no_special_symbols}_{datetime_str}_annotations.csv")
         annotation_filepath = os.path.join(output_path, "annotations.csv")
-        annotations_csv_path = os.path.join(output_path, annotation_filepath)
-        self.annotations_csv = open(annotations_csv_path, 'w')
+        self.annotations_csv = open(annotation_filepath, 'a')
         self.csv_writer = csv.writer(self.annotations_csv)
         
         # sign and filename are the first 2 in any of the headers
         annotation_header = ["sign", "filename"]
         annotation_header.extend(self.hotkeys.values())
         # Writes a header before each sign
-        self.csv_writer.writerow(annotation_header)
-        self.annotations_csv.flush()
+        if not csv_exists:
+            self.csv_writer.writerow(annotation_header)
+            self.annotations_csv.flush()
 
         self.attributes = set()
+
+        self.loadAnnotationFromCSV()
 
         self.playFullVideo()
 
@@ -145,6 +163,13 @@ class Player(QtWidgets.QMainWindow):
 
     def resetCurrentAnnotation(self):
         self.recording_annotation = ["" for i in range(len(self.hotkeys))]
+
+    def loadAnnotationFromCSV(self):
+        for idx, key in enumerate(self.hotkeys):
+            filename = self.videos[self.i]
+            if filename in self.preannotated:
+                if self.preannotated[filename][self.hotkeys[key]] == 'x':
+                    self.recording_annotation[idx] = 'x'
 
     def exitPlayer(self):
         done = QtWidgets.QMessageBox()
@@ -224,6 +249,7 @@ class Player(QtWidgets.QMainWindow):
             # switch to next video
             if self.i == len(self.sign_annotations):
                 self.resetCurrentAnnotation()
+                self.loadAnnotationFromCSV()
                 self.attributes = set()
             else:
                 self.loadExistingAnnotation()
