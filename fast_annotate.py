@@ -33,7 +33,7 @@ app = None
     
 class Player(QtWidgets.QMainWindow):
     def __init__(self, parent=None, annotations=None, directory=None, group=None, sign=None, hotkeys=None,
-                 output_src=None, ignore_existing=False):
+                 output_src=None, ignore_existing=False, skip_existing=True):
         self.directory = directory
         self.hotkeys = hotkeys
         self.resetCurrentAnnotation()
@@ -115,6 +115,14 @@ class Player(QtWidgets.QMainWindow):
 
             for index, row in existing_annotations.iterrows():
                 self.preannotated[row['filename']] = row
+
+        if skip_existing:
+            videos_in = self.video
+            self.videos = []
+            for vid in videos_in:
+                filename = vid.split('/')[-1]
+                if filename not in self.preannotated:
+                    self.videos.append(filename)
 
         self.reject_re_set = set()
 
