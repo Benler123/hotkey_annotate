@@ -117,7 +117,7 @@ class Player(QtWidgets.QMainWindow):
                 self.preannotated[row['filename']] = row
 
         if skip_existing:
-            videos_in = self.video
+            videos_in = self.videos
             self.videos = []
             for vid in videos_in:
                 filename = vid.split('/')[-1]
