@@ -1,0 +1,6 @@
+[submodule "Docker-QA/Dataset-QA-Docker"]
+	path = Docker-QA/Dataset-QA-Docker
+	url = https://github.com/guru-desh/Dataset-QA-Docker.git
+[submodule "Docker"]
+	path = Docker
+	url = https://github.com/guru-desh/Dataset-QA-Docker.git
