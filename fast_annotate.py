@@ -35,6 +35,7 @@ class Player(QtWidgets.QMainWindow):
     def __init__(self, parent=None, annotations=None, directory=None, group=None, sign=None, hotkeys=None,
                  output_src=None, ignore_existing=False, skip_existing=True):
         self.directory = directory
+        self.group = group
         self.hotkeys = hotkeys
         self.resetCurrentAnnotation()
 
@@ -94,7 +95,7 @@ class Player(QtWidgets.QMainWindow):
 
         self.sign = sign
         
-        self.sign_directory_path = os.path.join(self.directory, sign)
+        self.sign_directory_path = os.path.join(self.directory, self.group, sign)
 
         self.videos = os.listdir(self.sign_directory_path)
         self.videos.sort()
@@ -110,11 +111,13 @@ class Player(QtWidgets.QMainWindow):
             annotation_filepath = os.path.join(output_path, "annotations.csv")
             if os.path.exists(annotation_filepath):
                 csv_exists = True
-            existing_annotations = pd.read_csv(annotation_filepath)
-            existing_annotations.drop_duplicates(subset='sign', keep='last')
+                
+                # I (Bill) indented in these lines since these would run when the file did not exist
+                existing_annotations = pd.read_csv(annotation_filepath)
+                existing_annotations.drop_duplicates(subset='sign', keep='last')
 
-            for index, row in existing_annotations.iterrows():
-                self.preannotated[row['filename']] = row
+                for index, row in existing_annotations.iterrows():
+                    self.preannotated[row['filename']] = row
 
         if skip_existing:
             videos_in = self.videos
