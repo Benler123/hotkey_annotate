@@ -150,6 +150,11 @@ class Player(QtWidgets.QMainWindow):
 
         self.attributes = set()
 
+        if len(self.videos) == 0:
+            print("All videos have been annotated!")
+            self.exitPlayer()
+            return
+
         self.loadAnnotationFromCSV()
 
         self.playFullVideo()
@@ -268,7 +273,8 @@ class Player(QtWidgets.QMainWindow):
                 self.loadExistingAnnotation()
             self.playFullVideo()
         elif curr_key == REPLAY_KEY:
-            self.playFullVideo()
+            if self.i < len(self.videos):
+                self.playFullVideo()
         elif curr_key == BACK_KEY:
             if self.i < len(self.videos):
                 self.storeCurrentAnnotation()
@@ -312,8 +318,9 @@ if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     player = Player(directory=arguments.directory, group=arguments.group, sign=arguments.sign, hotkeys=hotkeys,
                     output_src=arguments.output)
-    player.show()
-    # Have this so that if the user minimizes it goes back to 640 x 480
-    player.resize(640, 480)
-    sys.exit(app.exec_())
+    if len(player.videos) != 0:
+        player.show()
+        # Have this so that if the user minimizes it goes back to 640 x 480
+        player.resize(640, 480)
+        sys.exit(app.exec_())
 
