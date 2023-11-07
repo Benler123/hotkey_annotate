@@ -306,7 +306,7 @@ if __name__ == '__main__':
     # takes a sign to annotate
     parser.add_argument('-s', '--sign', required=True)
     # takes the hotkey dictionary to annotate with
-    parser.add_argument('-h', '--hotkey', default="hotkeys.json")
+    parser.add_argument('-y', '--hotkey', default="hotkeys.json")
 
     arguments = parser.parse_args()
     # Make a hotkey dict using the json file
