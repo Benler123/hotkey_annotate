@@ -300,15 +300,17 @@ if __name__ == '__main__':
     # takes a path to the source directory
     parser.add_argument('-d', '--directory', required=True)
     # takes the group of signs (a subdirectory) in the source directory to be annotated
-    parser.add_argument('-g', '--group', required=True)
+    parser.add_argument('-g', '--group', default="", required=False)
     # Output directory where annotations and reject lists will be outputted
     parser.add_argument('-o', '--output', default="")
     # takes a sign to annotate
     parser.add_argument('-s', '--sign', required=True)
+    # takes the hotkey dictionary to annotate with
+    parser.add_argument('-h', '--hotkey', default="hotkeys.json")
 
     arguments = parser.parse_args()
     # Make a hotkey dict using the json file
-    file = open("hotkeys.json")
+    file = open(arguments.hotkey)
     hotkeys = json.load(file)
     file.close()
     for key in hotkeys.keys():
