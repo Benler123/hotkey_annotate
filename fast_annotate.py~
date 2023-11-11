@@ -100,8 +100,7 @@ class Player(QtWidgets.QMainWindow):
         self.videos = os.listdir(self.sign_directory_path)
         self.videos.sort()
 
-        #output_path = os.path.join(output_src, sign) # Will merge all the csv's into one big csv once we are done
-        output_path = output_src 
+        output_path = os.path.join(output_src, sign)
         Path(output_path).mkdir(parents=True, exist_ok=True)
 
         # see which files have already been annotated
@@ -109,7 +108,7 @@ class Player(QtWidgets.QMainWindow):
         self.preannotated = {}
         csv_exists = False
         if not ignore_existing:
-            annotation_filepath = os.path.join(output_path, f"{sign}.csv")
+            annotation_filepath = os.path.join(output_path, "annotations.csv")
             if os.path.exists(annotation_filepath):
                 csv_exists = True
                 
@@ -130,14 +129,14 @@ class Player(QtWidgets.QMainWindow):
 
         self.reject_re_set = set()
 
-        reject_re_path = os.path.join(output_path, f"REJECT_RE_{sign}.txt")
+        reject_re_path = os.path.join(output_path, "REJECT_RE.txt")
         self.reject_re = open(reject_re_path, 'a')
         self.reject_re.write(f"Session at time {str(datetime.datetime.now())}: \n")
 
         # group_no_special_symbols = ''.join(e for e in group if e.isalnum())
         # datetime_str = datetime.datetime.now().strftime('%y-%m-%d-%H:%M:%S')
         # annotation_filepath = os.path.join(output_path, f"{group_no_special_symbols}_{datetime_str}_annotations.csv")
-        annotation_filepath = os.path.join(output_path, f"{sign}.csv")
+        annotation_filepath = os.path.join(output_path, "annotations.csv")
         self.annotations_csv = open(annotation_filepath, 'a')
         self.csv_writer = csv.writer(self.annotations_csv)
         
@@ -301,15 +300,17 @@ if __name__ == '__main__':
     # takes a path to the source directory
     parser.add_argument('-d', '--directory', required=True)
     # takes the group of signs (a subdirectory) in the source directory to be annotated
-    parser.add_argument('-g', '--group', required=True)
+    parser.add_argument('-g', '--group', default="", required=False)
     # Output directory where annotations and reject lists will be outputted
     parser.add_argument('-o', '--output', default="")
     # takes a sign to annotate
     parser.add_argument('-s', '--sign', required=True)
+    # takes the hotkey dictionary to annotate with
+    parser.add_argument('-h', '--hotkey', default="hotkeys.json")
 
     arguments = parser.parse_args()
     # Make a hotkey dict using the json file
-    file = open("hotkeys.json")
+    file = open(arguments.hotkey)
     hotkeys = json.load(file)
     file.close()
     for key in hotkeys.keys():
