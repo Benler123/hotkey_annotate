@@ -25,7 +25,7 @@ Make it so two self.hotkeys can't be the same
 
 BACK_KEY = "0"
 REPLAY_KEY = "-"
-NEXT_KEY = "="
+NEXT_KEY = "="J
 SPEED_UP_KEY = "]"
 SLOW_DOWN_KEY = "["
 DISPLAY_INFO = "9"
@@ -33,7 +33,7 @@ app = None
     
 class Player(QtWidgets.QMainWindow):
     def __init__(self, parent=None, annotations=None, directory=None, group=None, sign=None, hotkeys=None,
-                 output_src=None, ignore_existing=False, skip_existing=True):
+                 output_src=None, ignore_existing=False, skip_existing=False):
         self.directory = directory
         self.group = group
         self.hotkeys = hotkeys
@@ -103,21 +103,34 @@ class Player(QtWidgets.QMainWindow):
         output_path = os.path.join(output_src, sign)
         Path(output_path).mkdir(parents=True, exist_ok=True)
 
+
+        #Create a temp annotations file where annotations from the current session goes
+        #and then append the annotations after the fact
+        self.annotation_filepath = os.path.join(output_path, "temp_annotations.csv")
+        self.final_annotation_filepath = os.path.join(output_path, "annotations.csv")
+
+
         # see which files have already been annotated
         self.annotated_files = set()
         self.preannotated = {}
-        csv_exists = False
+        
+
+        csv_exists = os.path.exists(self.annotation_filepath) # or os.path.exists(final_annotation_filepath) #Ignoring the final annotation path
         if not ignore_existing:
-            annotation_filepath = os.path.join(output_path, "annotations.csv")
-            if os.path.exists(annotation_filepath):
-                csv_exists = True
+            #annotation_filepath = os.path.join(output_path, "annotations.csv")
+
+            #It will load in annotations from a previous session 
+            if os.path.exists(self.annotation_filepath):
+                #csv_exists = True
                 
                 # I (Bill) indented in these lines since these would run when the file did not exist
-                existing_annotations = pd.read_csv(annotation_filepath)
+                existing_annotations = pd.read_csv(self.annotation_filepath)
                 existing_annotations.drop_duplicates(subset='sign', keep='last')
 
                 for index, row in existing_annotations.iterrows():
                     self.preannotated[row['filename']] = row
+
+        self.annotations_csv = open(self.annotation_filepath, 'a')
 
         if skip_existing:
             videos_in = self.videos
@@ -136,8 +149,9 @@ class Player(QtWidgets.QMainWindow):
         # group_no_special_symbols = ''.join(e for e in group if e.isalnum())
         # datetime_str = datetime.datetime.now().strftime('%y-%m-%d-%H:%M:%S')
         # annotation_filepath = os.path.join(output_path, f"{group_no_special_symbols}_{datetime_str}_annotations.csv")
-        annotation_filepath = os.path.join(output_path, "annotations.csv")
-        self.annotations_csv = open(annotation_filepath, 'a')
+        
+
+        #self.annotations_csv = open(annotation_filepath, 'w')
         self.csv_writer = csv.writer(self.annotations_csv)
         
         # sign and filename are the first 2 in any of the headers
@@ -169,6 +183,13 @@ class Player(QtWidgets.QMainWindow):
     def storeCurrentAnnotation(self):
         full_annotation = [self.sign, self.videos[self.i]]
         full_annotation.extend(self.recording_annotation)
+
+        #(Bill) I am trying to understand what is going on
+        print()
+        print(f'[Store Current Annotation]: self.recording_annotation: {self.recording_annotation}')
+        print(f'[Store Current Annotation]: full_annotation {full_annotation}')
+        print()
+
         self.csv_writer.writerow(full_annotation)
         self.annotations_csv.flush()
         if self.i == len(self.sign_annotations):
@@ -191,6 +212,7 @@ class Player(QtWidgets.QMainWindow):
                 self.attributes.add(self.hotkeys[self.hotkey_keys[idx]])
 
     def exitPlayer(self):
+        append_csv(self.annotation_filepath, self.final_annotation_filepath)
         done = QtWidgets.QMessageBox()
         done.setWindowTitle("Annotations complete")
         done.setText("All requested videos have now been annotated. You can view your annotations in annotations.csv.")
@@ -293,6 +315,23 @@ class Player(QtWidgets.QMainWindow):
             self.playback_speed /= 1.25
             self.playFullVideo()
         return self.i
+
+    #Skips the first row
+    def append_csv(source_csv, destination_csv):
+        # Read the source CSV file into a DataFrame, skipping the first row
+        source_df = pd.read_csv(source_csv, skiprows=1)
+        
+        # Read the destination CSV file into a DataFrame if it exists
+        if os.path.exists(destination_csv):
+            destination_df = pd.read_csv(destination_csv)
+        else:
+            destination_df = pd.DataFrame()  # If destination file doesn't exist, create an empty DataFrame
+        
+        # Append the source DataFrame to the destination DataFrame
+        combined_df = destination_df.append(source_df, ignore_index=True)
+        
+        # Write the combined DataFrame to the destination CSV file
+        combined_df.to_csv(destination_csv, index=False)
 
 
 if __name__ == '__main__':
