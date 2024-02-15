@@ -112,7 +112,12 @@ class Player(QtWidgets.QMainWindow):
 
         # see which files have already been annotated
         self.annotated_files = set()
+
+        #File to CSV Entry row dictionary loaded in from CSV files
         self.preannotated = {}
+
+        #File to CSV Entry row dictionary loaded in specifically from annotation temp
+        self.annotating_dict = {} 
         
 
         csv_exists = os.path.exists(self.annotation_filepath) # or os.path.exists(final_annotation_filepath) #Ignoring the final annotation path
@@ -121,14 +126,24 @@ class Player(QtWidgets.QMainWindow):
 
             #It will load in annotations from a previous session 
             if os.path.exists(self.annotation_filepath):
-                #csv_exists = True
-                
-                # I (Bill) indented in these lines since these would run when the file did not exist
                 existing_annotations = pd.read_csv(self.annotation_filepath)
                 existing_annotations.drop_duplicates(subset='sign', keep='last')
 
                 for index, row in existing_annotations.iterrows():
                     self.preannotated[row['filename']] = row
+                    self.annotating_dict[row['filename']] = row
+
+            #This will load in annotations from all previous session
+            if os.path.exists(self.final_annotation_filepath):
+                existing_annotations = pd.read_csv(self.final_annotation_filepath)
+                existing_annotations.drop_duplicates(subset='sign', keep='last')
+                
+                for index, row in existing_annotations.iterrows():
+                    self.preannotated[row['filename']] = row
+                
+
+        
+
 
         self.annotations_csv = open(self.annotation_filepath, 'a')
 
