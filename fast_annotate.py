@@ -25,7 +25,7 @@ Make it so two self.hotkeys can't be the same
 
 BACK_KEY = "0"
 REPLAY_KEY = "-"
-NEXT_KEY = "="J
+NEXT_KEY = "="
 SPEED_UP_KEY = "]"
 SLOW_DOWN_KEY = "["
 DISPLAY_INFO = "9"
@@ -33,7 +33,7 @@ app = None
     
 class Player(QtWidgets.QMainWindow):
     def __init__(self, parent=None, annotations=None, directory=None, group=None, sign=None, hotkeys=None,
-                 output_src=None, ignore_existing=False, skip_existing=False):
+                 output_src=None, ignore_existing=False, skip_existing=True):
         self.directory = directory
         self.group = group
         self.hotkeys = hotkeys
@@ -152,7 +152,9 @@ class Player(QtWidgets.QMainWindow):
             self.videos = []
             for vid in videos_in:
                 filename = vid.split('/')[-1]
-                if filename not in self.preannotated:
+                #If the file hasn't been preannotated or was in the previous annotating session
+                #add it to videos to annotate
+                if (filename not in self.preannotated) or (filename in self.annotating_dict):
                     self.videos.append(filename)
 
         self.reject_re_set = set()
@@ -227,7 +229,12 @@ class Player(QtWidgets.QMainWindow):
                 self.attributes.add(self.hotkeys[self.hotkey_keys[idx]])
 
     def exitPlayer(self):
-        append_csv(self.annotation_filepath, self.final_annotation_filepath)
+        #If the file exists, take temp file and make it the final, otherwise append
+        if (os.path.exists(self.final_annotation_filepath)):
+            self.append_csv(self.annotation_filepath, self.final_annotation_filepath)
+            os.remove(self.annotation_filepath)
+        else:
+            os.rename(self.annotation_filepath, self.final_annotation_filepath)
         done = QtWidgets.QMessageBox()
         done.setWindowTitle("Annotations complete")
         done.setText("All requested videos have now been annotated. You can view your annotations in annotations.csv.")
@@ -332,7 +339,7 @@ class Player(QtWidgets.QMainWindow):
         return self.i
 
     #Skips the first row
-    def append_csv(source_csv, destination_csv):
+    def append_csv(self, source_csv, destination_csv):
         # Read the source CSV file into a DataFrame, skipping the first row
         source_df = pd.read_csv(source_csv, skiprows=1)
         
