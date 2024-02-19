@@ -106,7 +106,7 @@ class Player(QtWidgets.QMainWindow):
 
         #Create a temp annotations file where annotations from the current session goes
         #and then append the annotations after the fact
-        self.annotation_filepath = os.path.join(output_path, "temp_annotations.csv")
+        self.annotation_filepath = os.path.join(output_path, f"temp_{self.group}_annotations.csv")
         self.final_annotation_filepath = os.path.join(output_path, "annotations.csv")
 
 
@@ -232,9 +232,13 @@ class Player(QtWidgets.QMainWindow):
         #If the file exists, take temp file and make it the final, otherwise append
         if (os.path.exists(self.final_annotation_filepath)):
             self.append_csv(self.annotation_filepath, self.final_annotation_filepath)
+            print(f"Deleting {self.annotation_filepath}")
             os.remove(self.annotation_filepath)
         else:
+            print(f"Renaming {self.annotation_filepath} to {self.final_annotation_filepath}")
             os.rename(self.annotation_filepath, self.final_annotation_filepath)
+
+        
         done = QtWidgets.QMessageBox()
         done.setWindowTitle("Annotations complete")
         done.setText("All requested videos have now been annotated. You can view your annotations in annotations.csv.")
@@ -341,8 +345,10 @@ class Player(QtWidgets.QMainWindow):
     #Skips the first row
     def append_csv(self, source_csv, destination_csv):
         # Read the source CSV file into a DataFrame, skipping the first row
-        source_df = pd.read_csv(source_csv, skiprows=1)
+        #source_df = pd.read_csv(source_csv, skiprows=1)
         
+        source_df = pd.read_csv(source_csv)
+
         # Read the destination CSV file into a DataFrame if it exists
         if os.path.exists(destination_csv):
             destination_df = pd.read_csv(destination_csv)
@@ -350,7 +356,7 @@ class Player(QtWidgets.QMainWindow):
             destination_df = pd.DataFrame()  # If destination file doesn't exist, create an empty DataFrame
         
         # Append the source DataFrame to the destination DataFrame
-        combined_df = destination_df.append(source_df, ignore_index=True)
+        combined_df = pd.concat([destination_df, source_df])
         
         # Write the combined DataFrame to the destination CSV file
         combined_df.to_csv(destination_csv, index=False)
