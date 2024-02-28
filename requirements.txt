@@ -1,3 +1,4 @@
 python-vlc
 PyQt5
 mysql-connector-python
+pandas
