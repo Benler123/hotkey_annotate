@@ -9,7 +9,7 @@ config = {
   'password': pw,
   'host': '0.0.0.0',
   'database': 'annotationsDB',
-  'raise_on_warnings': True
+  'raise_on_warnings': False
 }
 
 class MariaDB_Conn():
@@ -40,13 +40,13 @@ class MariaDB_Conn():
   
 
   def add_sign(self, sign):
-    query = "INSERT INTO sign_table (Sign, Complete) Values (%s, false)"
+    query = "INSERT IGNORE INTO sign_table (Sign, Complete) VALUES (%s, false)"
     parameters = (sign,)
     self.execute_query(query, parameters)
 
   def add_annotation(self, full_annotation: list):
     curent_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    query = "Insert INTO annotation_table (sign, fileName, user, sessionId, dateTime, good, unrecognizable, wrong_variant, flag) Values (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+    query = "Insert INTO Annotations (sign, fileName, user, sessionId, dateTime, good, unrecognizable, wrong_variant, flag) Values (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
     parameters = (full_annotation[0], full_annotation[1], "not implemented", "not implemented", curent_time, full_annotation[2]=='x', full_annotation[3]=='x', full_annotation[4]=='x', full_annotation[5]=='x')
     self.execute_query(query, parameters)
 
