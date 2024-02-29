@@ -8,6 +8,8 @@ import vlc
 import pandas as pd
 from pathlib import Path
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtCore import Qt
+from MariaDB_Conn import MariaDB_Conn
 
 '''
 TODO
@@ -38,6 +40,7 @@ class Player(QtWidgets.QMainWindow):
         self.group = group
         self.hotkeys = hotkeys
         self.resetCurrentAnnotation()
+        self.db_conn = MariaDB_Conn()
 
         self.attribute_index_map = {}
         for i, key in enumerate(self.hotkeys.keys()):
@@ -178,6 +181,9 @@ class Player(QtWidgets.QMainWindow):
         if not csv_exists:
             self.csv_writer.writerow(annotation_header)
             self.annotations_csv.flush()
+        
+        if not self.db_conn.get_sign(sign):
+            self.db_conn.add_sign(sign)
 
         self.attributes = set()
 
@@ -208,6 +214,7 @@ class Player(QtWidgets.QMainWindow):
         print()
 
         self.csv_writer.writerow(full_annotation)
+        self.db_conn.add_annotation(full_annotation)
         self.annotations_csv.flush()
         if self.i == len(self.sign_annotations):
             self.sign_annotations.append(full_annotation)
